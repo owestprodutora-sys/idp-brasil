@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { BRAZILIAN_STATES } from "@/lib/brazilian-states";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { PreAnalysisAnswers } from "@/types/pre-analysis";
 
 export default function Register() {
@@ -73,6 +73,14 @@ export default function Register() {
           Usamos essas informações só pra sua pré-análise ser avaliada pela
           Adrieli e pra entrarmos em contato com você.
         </p>
+
+        {!isSupabaseConfigured && (
+          <p className="mt-4 rounded-lg border border-ouro-500/40 bg-ouro-50 px-4 py-3 text-sm text-selo-900">
+            O Supabase ainda não está configurado neste ambiente (arquivo
+            `.env`). O formulário funciona, mas o envio vai falhar até isso
+            ser preenchido.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
           <Field label="Nome" htmlFor="nome">
