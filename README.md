@@ -16,9 +16,19 @@ Acesse http://localhost:5173
 
 Rode, nessa ordem, no SQL Editor do seu projeto Supabase:
 1. `sql/001_create_leads_table.sql` — cria a tabela `leads` e permite que o site insira novos leads
-2. `sql/002_add_leads_select_policy.sql` — permite que o Painel Adrieli (`/admin`) leia os leads
+2. `sql/002_add_leads_select_policy.sql` — política de leitura temporária (substituída pela nº 3)
+3. `sql/003_leads_select_authenticated_only.sql` — restringe a leitura dos leads a usuários logados
 
-⚠️ O `/admin` ainda não tem autenticação (ver aviso de segurança no topo do arquivo `002_add_leads_select_policy.sql`) — qualquer pessoa com o link consegue ver os leads. Adicionar login antes de divulgar a rota em produção.
+## Login do Painel (/admin)
+
+O `/admin` exige login (Supabase Auth, e-mail + senha). Não existe cadastro público — o
+usuário precisa ser criado manualmente:
+
+1. No Supabase: **Authentication → Users → Add user**
+2. Preencha e-mail e senha da Adrieli, marque **Auto Confirm User**
+3. Em **Authentication → Providers → Email**, desative **Allow new users to sign up**
+   (evita que alguém crie uma conta sozinho usando a chave pública do site)
+4. Acesse `/login` no site com esse e-mail/senha
 
 ## Scripts
 

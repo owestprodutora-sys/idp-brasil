@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
 import { LeadsTable } from "@/components/admin/LeadsTable";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { Lead } from "@/types/lead";
 
 export default function Admin() {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,6 +50,11 @@ export default function Admin() {
     };
   }, []);
 
+  async function handleSignOut() {
+    await signOut();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-paper px-6 py-10">
       <div className="mx-auto w-full max-w-5xl">
@@ -58,6 +67,14 @@ export default function Admin() {
               Painel Adrieli
             </h1>
           </div>
+
+          <Button
+            variant="outline"
+            onClick={handleSignOut}
+            className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+          >
+            Sair
+          </Button>
         </div>
 
         <div className="mt-8">
