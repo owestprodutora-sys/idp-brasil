@@ -50,6 +50,7 @@ export default function Register() {
     setIsSubmitting(false);
 
     if (error) {
+      console.error("[Supabase] Erro ao inserir lead:", error);
       setErrorMessage(
         "Não foi possível enviar sua pré-análise agora. Tente novamente em instantes.",
       );
