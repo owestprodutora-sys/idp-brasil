@@ -12,6 +12,14 @@ npm run dev
 
 Acesse http://localhost:5173
 
+## Supabase
+
+Rode, nessa ordem, no SQL Editor do seu projeto Supabase:
+1. `sql/001_create_leads_table.sql` — cria a tabela `leads` e permite que o site insira novos leads
+2. `sql/002_add_leads_select_policy.sql` — permite que o Painel Adrieli (`/admin`) leia os leads
+
+⚠️ O `/admin` ainda não tem autenticação (ver aviso de segurança no topo do arquivo `002_add_leads_select_policy.sql`) — qualquer pessoa com o link consegue ver os leads. Adicionar login antes de divulgar a rota em produção.
+
 ## Scripts
 
 - `npm run dev` — servidor de desenvolvimento

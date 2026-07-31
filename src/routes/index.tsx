@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
+import Admin from "@/pages/Admin";
 import Home from "@/pages/Home";
 import PreAnalysis from "@/pages/PreAnalysis";
 import Register from "@/pages/Register";
@@ -12,6 +13,7 @@ export function AppRoutes() {
       <Route path="/pre-analise" element={<PreAnalysis />} />
       <Route path="/cadastro" element={<Register />} />
       <Route path="/obrigado" element={<ThankYou />} />
+      <Route path="/admin" element={<Admin />} />
     </Routes>
   );
 }
