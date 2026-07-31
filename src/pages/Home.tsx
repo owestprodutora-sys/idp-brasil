@@ -1,19 +1,27 @@
-import { Rocket } from "lucide-react";
-import { Link } from "react-router-dom";
-
-import { Button } from "@/components/ui/button";
+import { Benefits } from "@/components/Benefits";
+import { CTA } from "@/components/CTA";
+import { Eligibility } from "@/components/Eligibility";
+import { FAQ } from "@/components/FAQ";
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { Hero } from "@/components/Hero";
+import { HowItWorks } from "@/components/HowItWorks";
+import { Specialist } from "@/components/Specialist";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <Rocket className="h-10 w-10 text-primary" />
-      <h1 className="text-2xl font-semibold">Projeto rodando 🎉</h1>
-      <p className="text-muted-foreground">
-        React + Vite + TypeScript + Tailwind + shadcn/ui + React Router.
-      </p>
-      <Button asChild>
-        <Link to="/sobre">Ir para /sobre</Link>
-      </Button>
-    </div>
+    <>
+      <Header />
+      <main>
+        <Hero />
+        <Benefits />
+        <Eligibility />
+        <HowItWorks />
+        <Specialist />
+        <FAQ />
+        <CTA />
+      </main>
+      <Footer />
+    </>
   );
 }

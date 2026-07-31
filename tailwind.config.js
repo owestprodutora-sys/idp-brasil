@@ -11,7 +11,28 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ["Fraunces", "serif"],
+        body: ["IBM Plex Sans", "system-ui", "sans-serif"],
+        mono: ["IBM Plex Mono", "monospace"],
+      },
       colors: {
+        paper: "#F5F6F2",
+        ink: "#16231F",
+        selo: {
+          50: "#E8EEEC",
+          100: "#C9D8D4",
+          400: "#1C5851",
+          600: "#123F3A",
+          700: "#0E3B36",
+          900: "#092824",
+        },
+        ouro: {
+          50: "#F7EFDC",
+          400: "#C9A24E",
+          500: "#B98B3E",
+          600: "#96702E",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -50,6 +71,15 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.6s ease-out both",
       },
     },
   },

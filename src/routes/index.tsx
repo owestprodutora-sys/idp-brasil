@@ -1,13 +1,13 @@
 import { Route, Routes } from "react-router-dom";
 
-import About from "@/pages/About";
 import Home from "@/pages/Home";
+import PreAnalysis from "@/pages/PreAnalysis";
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/sobre" element={<About />} />
+      <Route path="/pre-analise" element={<PreAnalysis />} />
     </Routes>
   );
 }
