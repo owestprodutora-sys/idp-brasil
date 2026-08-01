@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Lock, ShieldCheck, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { BRAZILIAN_STATES } from "@/lib/brazilian-states";
@@ -71,12 +72,27 @@ export default function Register() {
         </Link>
 
         <h1 className="mt-6 text-balance font-display text-2xl font-semibold leading-snug text-selo-900 md:text-3xl">
-          Finalize sua pré-análise
+          Finalize sua pré-análise gratuita
         </h1>
         <p className="mt-2 text-sm text-ink/60">
           Informe seus dados para que nossa especialista possa avaliar suas
-          respostas e entrar em contato.
+          respostas e entrar em contato. Sem custo e sem compromisso.
         </p>
+
+        <div className="mt-5 flex flex-col gap-2 rounded-xl border border-selo-700/15 bg-selo-50/60 px-4 py-3">
+          <TrustItem
+            icon={<Sparkles className="h-4 w-4" />}
+            text="100% gratuito, sem compromisso de contratação"
+          />
+          <TrustItem
+            icon={<Lock className="h-4 w-4" />}
+            text="Seus dados são protegidos conforme a LGPD"
+          />
+          <TrustItem
+            icon={<ShieldCheck className="h-4 w-4" />}
+            text="Análise conduzida com sigilo pela especialista responsável"
+          />
+        </div>
 
         {!isSupabaseConfigured && (
           <p className="mt-4 rounded-lg border border-ouro-500/40 bg-ouro-50 px-4 py-3 text-sm text-selo-900">
@@ -154,7 +170,7 @@ export default function Register() {
             </select>
           </Field>
 
-          <label className="flex items-start gap-3 text-sm text-ink/70">
+          <label className="flex items-start gap-3 rounded-xl border border-selo-700/15 bg-selo-50/40 px-4 py-3 text-sm text-ink/70">
             <input
               type="checkbox"
               checked={lgpdAceito}
@@ -162,8 +178,9 @@ export default function Register() {
               className="mt-0.5 h-5 w-5 shrink-0 rounded border-2 border-selo-700/30 text-selo-700 focus:ring-selo-700"
             />
             <span>
-              Autorizo o uso dos meus dados para contato sobre minha
-              pré-análise, conforme a LGPD.
+              Autorizo o uso dos meus dados exclusivamente para contato sobre
+              minha pré-análise, conforme a Lei Geral de Proteção de Dados
+              (LGPD). Seus dados não serão compartilhados com terceiros.
             </span>
           </label>
 
@@ -177,12 +194,13 @@ export default function Register() {
             disabled={!isFormValid || isSubmitting}
             className="h-12 w-full bg-ouro-500 text-base text-selo-900 hover:bg-ouro-400 disabled:opacity-40"
           >
-            {isSubmitting ? "Enviando..." : "Enviar Pré-Análise"}
+            {isSubmitting ? "Enviando..." : "Quero Minha Pré-Análise Gratuita"}
           </Button>
 
-          <p className="-mt-1 text-center text-xs text-ink/50">
-            Gratuito e sem compromisso. Você só decide se quer seguir depois
-            de falar com a especialista.
+          <p className="-mt-1 flex items-center justify-center gap-1.5 text-center text-xs text-ink/50">
+            <Lock className="h-3.5 w-3.5 shrink-0" />
+            Gratuito, sigiloso e sem compromisso. Você só decide se quer
+            seguir depois de falar com a especialista.
           </p>
         </form>
       </div>
@@ -208,6 +226,17 @@ function Field({
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+function TrustItem({ icon, text }: { icon: ReactNode; text: string }) {
+  return (
+    <div className="flex items-center gap-2.5 text-xs font-medium text-selo-700">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-selo-700/10 text-selo-700">
+        {icon}
+      </span>
+      <span className="text-ink/70">{text}</span>
     </div>
   );
 }
