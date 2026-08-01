@@ -18,6 +18,7 @@ Rode, nessa ordem, no SQL Editor do seu projeto Supabase:
 1. `sql/001_create_leads_table.sql` — cria a tabela `leads` e permite que o site insira novos leads
 2. `sql/002_add_leads_select_policy.sql` — política de leitura temporária (substituída pela nº 3)
 3. `sql/003_leads_select_authenticated_only.sql` — restringe a leitura dos leads a usuários logados
+4. `sql/004_leads_insert_any_role.sql` — corrige o INSERT pra funcionar mesmo com uma sessão de admin ativa no mesmo navegador
 
 ## Login do Painel (/admin)
 
