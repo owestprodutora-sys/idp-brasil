@@ -4,17 +4,20 @@ const steps = [
   {
     number: "1",
     title: "Pré-Análise",
-    description: "Faça sua Pré-Análise.",
+    description:
+      "Responda algumas perguntas para verificarmos seu possível enquadramento.",
   },
   {
     number: "2",
     title: "Análise da Especialista",
-    description: "Nossa especialista analisa gratuitamente.",
+    description:
+      "As informações serão avaliadas para orientar os próximos passos.",
   },
   {
     number: "3",
     title: "Processo",
-    description: "Se houver direito, iniciamos todo o processo.",
+    description:
+      "Caso exista possibilidade de direito, você receberá orientação sobre o procedimento.",
   },
 ];
 

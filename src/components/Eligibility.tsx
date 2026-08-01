@@ -34,6 +34,10 @@ export function Eligibility() {
           </span>
         </div>
       </div>
+
+      <p className="mt-6 text-sm text-ink/50">
+        Cada caso é analisado individualmente conforme a legislação vigente.
+      </p>
     </Section>
   );
 }

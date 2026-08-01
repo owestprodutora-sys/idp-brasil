@@ -71,11 +71,11 @@ export default function Register() {
         </Link>
 
         <h1 className="mt-6 text-balance font-display text-2xl font-semibold leading-snug text-selo-900 md:text-3xl">
-          Falta pouco. Seus dados para a análise da especialista.
+          Finalize sua pré-análise
         </h1>
         <p className="mt-2 text-sm text-ink/60">
-          Usamos essas informações só pra sua pré-análise ser avaliada pela
-          Adrieli e pra entrarmos em contato com você.
+          Informe seus dados para que nossa especialista possa avaliar suas
+          respostas e entrar em contato.
         </p>
 
         {!isSupabaseConfigured && (

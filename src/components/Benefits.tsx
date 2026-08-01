@@ -13,22 +13,25 @@ const benefits: BenefitItem[] = [
   {
     icon: ShieldCheck,
     title: "Isenção do IR",
-    description: "Parar de pagar Imposto de Renda na aposentadoria.",
+    description:
+      "Possibilidade de deixar de pagar Imposto de Renda sobre aposentadoria quando houver enquadramento legal.",
   },
   {
     icon: Wallet,
     title: "Restituição",
-    description: "Recuperar valores pagos indevidamente.",
+    description:
+      "Em alguns casos, pode existir possibilidade de recuperar valores pagos anteriormente.",
   },
   {
     icon: Headset,
     title: "Atendimento Digital",
-    description: "Processo totalmente digital.",
+    description: "Todo o processo pode ser acompanhado de forma digital.",
   },
   {
     icon: Laptop,
     title: "Especialista",
-    description: "Atendimento especializado.",
+    description:
+      "Análise realizada por especialista responsável pelo atendimento.",
   },
 ];
 

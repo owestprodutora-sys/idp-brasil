@@ -12,12 +12,13 @@ export function Hero() {
           <LegalBadge />
 
           <h1 className="mt-5 text-balance font-display text-4xl font-semibold leading-[1.12] text-selo-900 md:text-5xl">
-            Descubra se você pode parar de pagar Imposto de Renda na
+            Você pode ter direito à isenção do Imposto de Renda na
             aposentadoria.
           </h1>
 
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink/70">
-            Faça uma pré-análise gratuita em menos de 2 minutos.
+            Faça uma pré-análise gratuita e descubra se o seu caso pode se
+            enquadrar na legislação.
           </p>
 
           <div className="mt-8 flex flex-col items-start gap-4">
@@ -26,7 +27,7 @@ export function Hero() {
               size="lg"
               className="h-12 bg-ouro-500 px-7 text-base text-selo-900 hover:bg-ouro-400"
             >
-              <Link to="/pre-analise">Começar Agora</Link>
+              <Link to="/pre-analise">Fazer Pré-Análise Gratuita</Link>
             </Button>
 
             <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink/60">
@@ -37,7 +38,7 @@ export function Hero() {
                 <CheckMark /> Menos de 2 minutos
               </li>
               <li className="flex items-center gap-1.5">
-                <CheckMark /> Atendimento 100% digital
+                <CheckMark /> Sem compromisso
               </li>
             </ul>
           </div>

@@ -13,22 +13,22 @@ const faqs = [
   {
     question: "Quanto custa?",
     answer:
-      "A pré-análise é 100% gratuita. Você só saberá o custo do processo depois de conversar com a nossa especialista.",
+      "A pré-análise inicial é gratuita e serve para verificar se o caso possui possibilidade de enquadramento.",
   },
   {
     question: "Quanto tempo demora?",
     answer:
-      "O tempo varia caso a caso, conforme a doença, o órgão responsável e a documentação disponível.",
+      "O prazo depende da análise individual de cada situação e dos documentos necessários.",
   },
   {
     question: "Preciso entrar na Justiça?",
     answer:
-      "Nem sempre. Em muitos casos o pedido é feito administrativamente. Nossa especialista avalia o melhor caminho para o seu caso.",
+      "Cada situação é analisada individualmente. Após a avaliação, serão orientados os próximos passos possíveis.",
   },
   {
     question: "Posso recuperar valores?",
     answer:
-      "Sim. Além de parar de pagar o imposto, você pode ter direito à restituição de valores pagos indevidamente nos últimos anos.",
+      "Em alguns casos pode existir possibilidade de restituição de valores pagos anteriormente, conforme análise do caso.",
   },
 ];
 
