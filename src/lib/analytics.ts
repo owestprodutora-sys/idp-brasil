@@ -1,16 +1,16 @@
 /**
  * Camada central de Analytics do IDP Brasil.
  *
- * Responsável por inicializar o Google Analytics 4 (gtag.js) e o Meta
- * Pixel (fbq), e por expor funções de rastreamento reutilizáveis para
- * as páginas/componentes da aplicação.
+ * O GA4 (gtag.js) é inicializado via snippet oficial do Google em
+ * index.html. Este módulo é responsável por inicializar o Meta Pixel
+ * (fbq) e por expor funções de rastreamento reutilizáveis para as
+ * páginas/componentes da aplicação, usando o window.gtag já existente.
  *
  * Nenhum componente deve manipular `window.gtag` ou `window.fbq`
  * diretamente — todas as chamadas de rastreamento devem passar pelas
  * funções exportadas aqui.
  */
 
-const GA4_MEASUREMENT_ID = "G-0T4B0J0QD4";
 const META_PIXEL_ID = "524177028061136";
 
 type GtagFunction = (...args: unknown[]) => void;
@@ -45,35 +45,11 @@ function loadScriptOnce(src: string, id: string) {
   document.head.appendChild(script);
 }
 
-function initGA4() {
-  // Padrão oficial do Google gtag.js: window.dataLayer + a função gtag
-  // são definidos, e a sequência gtag('js', ...) / gtag('config', ...)
-  // é disparada de forma SÍNCRONA, sem esperar o script terminar de
-  // carregar (nada de window.onload). É esse par que o gtag.js procura
-  // assim que termina de carregar para processar a fila do dataLayer e
-  // enviar o hit inicial para google-analytics.com/g/collect — se o
-  // 'config' não estiver lá nesse momento (por ter sido adiado para o
-  // onload), o carregamento do script conclui sem nenhum hit ser
-  // enviado, mesmo com os comandos corretos aparecendo no dataLayer.
-  window.dataLayer = window.dataLayer || [];
-  const dataLayer = window.dataLayer;
-
-  const gtag: GtagFunction = (...args: unknown[]) => {
-    dataLayer.push(args);
-  };
-  window.gtag = gtag;
-
-  loadScriptOnce(
-    `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`,
-    "ga4-gtag-script",
-  );
-
-  gtag("js", new Date());
-  // send_page_view desativado: o PageView é disparado manualmente pelo
-  // rastreamento de rota da SPA (ver trackPageView em src/App.tsx),
-  // evitando duplicidade de eventos.
-  gtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
-}
+// A inicialização do GA4 (script gtag.js + gtag('js', ...) / gtag('config', ...))
+// agora é feita pelo snippet oficial do Google carregado diretamente em
+// index.html, garantindo que o 'config' esteja disponível de forma síncrona
+// assim que o script termina de carregar. window.gtag já existe globalmente
+// quando este módulo é executado.
 
 function initMetaPixel() {
   if (window.fbq) return;
@@ -108,7 +84,6 @@ export function initAnalytics() {
   if (isInitialized) return;
   isInitialized = true;
 
-  initGA4();
   initMetaPixel();
 }
 
