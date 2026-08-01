@@ -1,11 +1,17 @@
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ClipboardCheck, MessageCircle, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { companyInfo } from "@/lib/company-info";
+import { trackLead } from "@/lib/analytics";
 
 export default function ThankYou() {
+  useEffect(() => {
+    trackLead("thank_you_page");
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-paper px-6 text-center">
       <span className="flex h-16 w-16 items-center justify-center rounded-full bg-selo-700 text-paper">

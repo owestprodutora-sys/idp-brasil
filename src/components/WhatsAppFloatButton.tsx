@@ -1,6 +1,7 @@
 import { MessageCircle } from "lucide-react";
 
 import { companyInfo } from "@/lib/company-info";
+import { trackContact } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -24,6 +25,7 @@ export function WhatsAppFloatButton({ raised = false }: WhatsAppFloatButtonProps
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Falar com a IDP Brasil no WhatsApp"
+      onClick={() => trackContact("whatsapp_float_button")}
       className={cn(
         "fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-selo-700 text-paper shadow-lg shadow-selo-900/25 transition-transform hover:scale-105 hover:bg-selo-600 active:scale-95",
         raised ? "bottom-28 md:bottom-6" : "bottom-6",

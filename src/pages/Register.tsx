@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BRAZILIAN_STATES } from "@/lib/brazilian-states";
 import { formatPhoneInput, isValidBrazilianPhone } from "@/lib/phone";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { trackLead } from "@/lib/analytics";
 import type { PreAnalysisAnswers } from "@/types/pre-analysis";
 
 export default function Register() {
@@ -61,6 +62,7 @@ export default function Register() {
       return;
     }
 
+    trackLead("form_submit");
     navigate("/obrigado");
   }
 

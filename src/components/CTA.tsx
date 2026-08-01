@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { Section } from "@/components/Section";
 import { Button } from "@/components/ui/button";
+import { trackViewContent } from "@/lib/analytics";
 
 export function CTA() {
   return (
@@ -16,7 +17,12 @@ export function CTA() {
           size="lg"
           className="h-12 bg-ouro-500 px-8 text-base text-selo-900 hover:bg-ouro-400"
         >
-          <Link to="/pre-analise">Fazer Pré-Análise Gratuita</Link>
+          <Link
+            to="/pre-analise"
+            onClick={() => trackViewContent("cta_final_pre_analise")}
+          >
+            Fazer Pré-Análise Gratuita
+          </Link>
         </Button>
       </div>
 

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { DocumentSeal } from "@/components/DocumentSeal";
 import { LegalBadge } from "@/components/LegalBadge";
 import { Button } from "@/components/ui/button";
+import { trackViewContent } from "@/lib/analytics";
 
 export function Hero() {
   return (
@@ -27,7 +28,12 @@ export function Hero() {
               size="lg"
               className="h-12 bg-ouro-500 px-7 text-base text-selo-900 hover:bg-ouro-400"
             >
-              <Link to="/pre-analise">Fazer Pré-Análise Gratuita</Link>
+              <Link
+                to="/pre-analise"
+                onClick={() => trackViewContent("hero_cta_pre_analise")}
+              >
+                Fazer Pré-Análise Gratuita
+              </Link>
             </Button>
 
             <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink/60">
