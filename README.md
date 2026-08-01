@@ -31,6 +31,13 @@ usuário precisa ser criado manualmente:
    (evita que alguém crie uma conta sozinho usando a chave pública do site)
 4. Acesse `/login` no site com esse e-mail/senha
 
+## Deploy na Vercel
+
+1. Suba o projeto pra um repositório no GitHub (`git remote add origin <url>` e `git push`)
+2. Importe o repositório na Vercel — o framework Vite é detectado automaticamente (build command `npm run build`, output `dist`)
+3. Em **Environment Variables**, adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` com os mesmos valores do seu `.env` local
+4. Deploy. O `vercel.json` já está configurado com o rewrite necessário pra rotas do React Router (`/admin`, `/login` etc.) funcionarem em acesso direto/refresh
+
 ## Scripts
 
 - `npm run dev` — servidor de desenvolvimento
