@@ -35,29 +35,26 @@ declare global {
 
 let isInitialized = false;
 
-// GA4: só é seguro enviar eventos depois que o script gtag.js terminar
-// de carregar e o comando `config` for efetivamente executado — antes
-// disso, qualquer evento é enfileirado e liberado assim que o config
-// rodar. Isso elimina os "hits adiados" reportados pelo Tag Assistant,
-// garantindo a ordem: carregar script → gtag('config') → eventos.
-let isGA4Configured = false;
-let ga4PendingCalls: Array<() => void> = [];
-
-function loadScriptOnce(src: string, id: string, onload?: () => void) {
-  if (document.getElementById(id)) {
-    onload?.();
-    return;
-  }
+function loadScriptOnce(src: string, id: string) {
+  if (document.getElementById(id)) return;
 
   const script = document.createElement("script");
   script.async = true;
   script.src = src;
   script.id = id;
-  if (onload) script.onload = onload;
   document.head.appendChild(script);
 }
 
 function initGA4() {
+  // Padrão oficial do Google gtag.js: window.dataLayer + a função gtag
+  // são definidos, e a sequência gtag('js', ...) / gtag('config', ...)
+  // é disparada de forma SÍNCRONA, sem esperar o script terminar de
+  // carregar (nada de window.onload). É esse par que o gtag.js procura
+  // assim que termina de carregar para processar a fila do dataLayer e
+  // enviar o hit inicial para google-analytics.com/g/collect — se o
+  // 'config' não estiver lá nesse momento (por ter sido adiado para o
+  // onload), o carregamento do script conclui sem nenhum hit ser
+  // enviado, mesmo com os comandos corretos aparecendo no dataLayer.
   window.dataLayer = window.dataLayer || [];
   const dataLayer = window.dataLayer;
 
@@ -69,18 +66,13 @@ function initGA4() {
   loadScriptOnce(
     `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`,
     "ga4-gtag-script",
-    () => {
-      gtag("js", new Date());
-      // send_page_view desativado: o PageView é disparado manualmente pelo
-      // rastreamento de rota da SPA (ver trackPageView em src/App.tsx),
-      // evitando duplicidade de eventos.
-      gtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
-
-      isGA4Configured = true;
-      ga4PendingCalls.forEach((flush) => flush());
-      ga4PendingCalls = [];
-    },
   );
+
+  gtag("js", new Date());
+  // send_page_view desativado: o PageView é disparado manualmente pelo
+  // rastreamento de rota da SPA (ver trackPageView em src/App.tsx),
+  // evitando duplicidade de eventos.
+  gtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
 }
 
 function initMetaPixel() {
@@ -121,17 +113,13 @@ export function initAnalytics() {
 }
 
 function safeGtag(...args: unknown[]) {
-  if (typeof window.gtag !== "function") return;
-
-  if (!isGA4Configured) {
-    // Ainda não recebemos a confirmação de `gtag('config', ...)`
-    // (script ainda carregando). Enfileira e reenvia na mesma ordem
-    // assim que o config for concluído — nunca antes dele.
-    ga4PendingCalls.push(() => window.gtag?.(...args));
-    return;
+  // Como gtag('config', ...) roda de forma síncrona dentro de initGA4
+  // (chamada por initAnalytics antes de qualquer trackXxx ser possível),
+  // não há janela de corrida a proteger aqui — basta garantir que o
+  // gtag já foi definido.
+  if (typeof window.gtag === "function") {
+    window.gtag(...args);
   }
-
-  window.gtag(...args);
 }
 
 function safeFbq(...args: unknown[]) {
