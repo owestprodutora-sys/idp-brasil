@@ -35,13 +35,25 @@ declare global {
 
 let isInitialized = false;
 
-function loadScriptOnce(src: string, id: string) {
-  if (document.getElementById(id)) return;
+// GA4: só é seguro enviar eventos depois que o script gtag.js terminar
+// de carregar e o comando `config` for efetivamente executado — antes
+// disso, qualquer evento é enfileirado e liberado assim que o config
+// rodar. Isso elimina os "hits adiados" reportados pelo Tag Assistant,
+// garantindo a ordem: carregar script → gtag('config') → eventos.
+let isGA4Configured = false;
+let ga4PendingCalls: Array<() => void> = [];
+
+function loadScriptOnce(src: string, id: string, onload?: () => void) {
+  if (document.getElementById(id)) {
+    onload?.();
+    return;
+  }
 
   const script = document.createElement("script");
   script.async = true;
   script.src = src;
   script.id = id;
+  if (onload) script.onload = onload;
   document.head.appendChild(script);
 }
 
@@ -57,13 +69,18 @@ function initGA4() {
   loadScriptOnce(
     `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`,
     "ga4-gtag-script",
-  );
+    () => {
+      gtag("js", new Date());
+      // send_page_view desativado: o PageView é disparado manualmente pelo
+      // rastreamento de rota da SPA (ver trackPageView em src/App.tsx),
+      // evitando duplicidade de eventos.
+      gtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
 
-  gtag("js", new Date());
-  // send_page_view desativado: o PageView é disparado manualmente pelo
-  // rastreamento de rota da SPA (ver trackPageView em src/App.tsx),
-  // evitando duplicidade de eventos.
-  gtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
+      isGA4Configured = true;
+      ga4PendingCalls.forEach((flush) => flush());
+      ga4PendingCalls = [];
+    },
+  );
 }
 
 function initMetaPixel() {
@@ -104,9 +121,17 @@ export function initAnalytics() {
 }
 
 function safeGtag(...args: unknown[]) {
-  if (typeof window.gtag === "function") {
-    window.gtag(...args);
+  if (typeof window.gtag !== "function") return;
+
+  if (!isGA4Configured) {
+    // Ainda não recebemos a confirmação de `gtag('config', ...)`
+    // (script ainda carregando). Enfileira e reenvia na mesma ordem
+    // assim que o config for concluído — nunca antes dele.
+    ga4PendingCalls.push(() => window.gtag?.(...args));
+    return;
   }
+
+  window.gtag(...args);
 }
 
 function safeFbq(...args: unknown[]) {
