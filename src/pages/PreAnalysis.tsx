@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { DiseaseChecklist } from "@/components/pre-analysis/DiseaseChecklist";
 import { PreAnalysisDone } from "@/components/pre-analysis/PreAnalysisDone";
@@ -53,6 +53,13 @@ export default function PreAnalysis() {
   return (
     <div className="flex min-h-screen flex-col bg-paper px-6 py-8">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+        <Link
+          to="/"
+          className="mb-6 self-start font-display text-base font-semibold text-selo-700"
+        >
+          IDP <span className="text-ouro-600">Brasil</span>
+        </Link>
+
         <div className="flex items-start gap-4">
           {(step > 0 || finished) && (
             <button

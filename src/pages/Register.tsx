@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { BRAZILIAN_STATES } from "@/lib/brazilian-states";
+import { formatPhoneInput, isValidBrazilianPhone } from "@/lib/phone";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { PreAnalysisAnswers } from "@/types/pre-analysis";
 
@@ -14,15 +15,18 @@ export default function Register() {
 
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [whatsappTouched, setWhatsappTouched] = useState(false);
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
   const [lgpdAceito, setLgpdAceito] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const isWhatsappValid = isValidBrazilianPhone(whatsapp);
+
   const isFormValid =
     nome.trim().length > 0 &&
-    whatsapp.trim().length > 0 &&
+    isWhatsappValid &&
     cidade.trim().length > 0 &&
     estado.length > 0 &&
     lgpdAceito;
@@ -104,10 +108,18 @@ export default function Register() {
               inputMode="tel"
               autoComplete="tel"
               value={whatsapp}
-              onChange={(event) => setWhatsapp(event.target.value)}
+              onChange={(event) => setWhatsapp(formatPhoneInput(event.target.value))}
+              onBlur={() => setWhatsappTouched(true)}
               placeholder="(00) 00000-0000"
+              maxLength={15}
+              aria-invalid={whatsappTouched && !isWhatsappValid}
               className={inputClassName}
             />
+            {whatsappTouched && whatsapp.length > 0 && !isWhatsappValid && (
+              <p className="mt-1.5 text-sm text-red-600">
+                Confira o número com DDD, ex.: (55) 99999-9999.
+              </p>
+            )}
           </Field>
 
           <Field label="Cidade" htmlFor="cidade">
@@ -167,6 +179,11 @@ export default function Register() {
           >
             {isSubmitting ? "Enviando..." : "Enviar Pré-Análise"}
           </Button>
+
+          <p className="-mt-1 text-center text-xs text-ink/50">
+            Gratuito e sem compromisso. Você só decide se quer seguir depois
+            de falar com a especialista.
+          </p>
         </form>
       </div>
     </div>
