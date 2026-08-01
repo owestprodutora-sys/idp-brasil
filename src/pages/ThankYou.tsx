@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { companyInfo } from "@/lib/company-info";
 
 export default function ThankYou() {
   return (
@@ -15,6 +16,9 @@ export default function ThankYou() {
         </h1>
         <p className="mt-3 text-base leading-relaxed text-ink/65">
           Nossa especialista analisará suas respostas e entrará em contato.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-ink/50">
+          Prazo médio de retorno: até {companyInfo.prazoRetornoUteis}.
         </p>
       </div>
 
