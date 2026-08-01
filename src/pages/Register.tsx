@@ -41,7 +41,6 @@ export default function Register() {
       estado,
       aposentado: answers?.aposentado ?? null,
       tributavel: answers?.tributavel ?? null,
-      doenca: answers?.doenca ?? null,
       qual_doenca: answers?.qualDoenca ?? null,
       laudo: answers?.laudo ?? null,
       lgpd_aceito: lgpdAceito,

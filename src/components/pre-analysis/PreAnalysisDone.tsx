@@ -12,7 +12,7 @@ export function PreAnalysisDone({ onContinue }: PreAnalysisDoneProps) {
       </span>
 
       <h1 className="mt-5 text-balance font-display text-2xl font-semibold leading-snug text-selo-900 md:text-3xl">
-        Ótimo.
+        Vamos finalizar sua pré-análise.
       </h1>
       <p className="mt-3 text-base leading-relaxed text-ink/65">
         Agora precisamos apenas dos seus dados para que nossa especialista
