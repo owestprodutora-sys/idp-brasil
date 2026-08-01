@@ -10,7 +10,7 @@ export const companyInfo = {
   nomeEmpresa: null as string | null,
   cnpj: null as string | null,
   telefone: null as string | null,
-  whatsapp: null as string | null,
+  whatsapp: "+55 (55) 99689-1449" as string | null,
   email: "contato@idpbrasil.com.br",
   endereco: null as string | null,
   cidade: null as string | null,

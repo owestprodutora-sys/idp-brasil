@@ -19,6 +19,16 @@ export function CTA() {
           <Link to="/pre-analise">Fazer Pré-Análise Gratuita</Link>
         </Button>
       </div>
+
+      <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-paper/60">
+        <li>Pré-análise gratuita</li>
+        <li className="hidden sm:inline">·</li>
+        <li>Dados protegidos pela LGPD</li>
+        <li className="hidden sm:inline">·</li>
+        <li>Sem compromisso</li>
+        <li className="hidden sm:inline">·</li>
+        <li>Atendimento especializado</li>
+      </ul>
     </Section>
   );
 }

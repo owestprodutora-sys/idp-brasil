@@ -76,6 +76,11 @@ export default function PreAnalysis() {
             Seus dados são tratados com segurança e utilizados apenas para
             análise do seu caso.
           </span>
+
+          <span className="inline-flex items-center gap-1.5 text-xs text-ink/50">
+            <SpecialistIcon />
+            Avaliação conduzida por especialista responsável.
+          </span>
         </div>
 
         <div className="flex items-start gap-4">
@@ -197,6 +202,25 @@ function LockIcon() {
       />
       <path
         d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SpecialistIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="h-3.5 w-3.5 shrink-0 text-ink/40"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M4.5 16c0-2.8 2.46-4.5 5.5-4.5s5.5 1.7 5.5 4.5"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"

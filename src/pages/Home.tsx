@@ -6,22 +6,26 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
+import { MobileStickyCTA } from "@/components/MobileStickyCTA";
 import { Specialist } from "@/components/Specialist";
 
 export default function Home() {
   return (
     <>
-      <Header />
-      <main>
-        <Hero />
-        <Benefits />
-        <Eligibility />
-        <HowItWorks />
-        <Specialist />
-        <FAQ />
-        <CTA />
-      </main>
-      <Footer />
+      <div className="pb-24 md:pb-0">
+        <Header />
+        <main>
+          <Hero />
+          <Benefits />
+          <Eligibility />
+          <HowItWorks />
+          <Specialist />
+          <FAQ />
+          <CTA />
+        </main>
+        <Footer />
+      </div>
+      <MobileStickyCTA />
     </>
   );
 }
