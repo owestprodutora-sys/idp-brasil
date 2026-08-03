@@ -18,7 +18,7 @@ import { formatDateTime, toDateInputValue } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { useAuth } from "@/hooks/useAuth";
-import type { Documento } from "@/types/documento";
+import type { Documento, DocumentoHistorico } from "@/types/documento";
 import type { Lead } from "@/types/lead";
 
 interface LeadDetailModalProps {
@@ -169,6 +169,12 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     setDocumentos((current) =>
       current.map((d) => (d.id === documento.id ? (atualizado as Documento) : d)),
     );
+    setHistoricoPorDocumento((current) => {
+      if (!(documento.id in current)) return current;
+      const resto = { ...current };
+      delete resto[documento.id];
+      return resto;
+    });
     setUploadingId(null);
   }
 
@@ -229,9 +235,62 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     setDocumentos((current) =>
       current.map((d) => (d.id === documento.id ? (atualizado as Documento) : d)),
     );
+    setHistoricoPorDocumento((current) => {
+      if (!(documento.id in current)) return current;
+      const resto = { ...current };
+      delete resto[documento.id];
+      return resto;
+    });
     setValidandoSalvando(false);
     setValidandoId(null);
     setValidandoAcao(null);
+  }
+
+  // FEATURE 008 (visual) — histórico por documento, carregado sob demanda
+  // (evita 1 query por item da lista logo ao abrir o modal).
+  const ACAO_HISTORICO_LABEL: Record<DocumentoHistorico["acao"], string> = {
+    CHECKLIST_GERADO: "Item do checklist gerado",
+    DOCUMENTO_ENVIADO: "Documento enviado",
+    DOCUMENTO_SUBSTITUIDO: "Documento substituído",
+    DOCUMENTO_VALIDADO: "Marcado como correto",
+    DOCUMENTO_REJEITADO: "Marcado como inválido",
+    NOVA_VERSAO_SOLICITADA: "Nova versão solicitada",
+  };
+
+  const [historicoAbertoId, setHistoricoAbertoId] = useState<string | null>(null);
+  const [historicoPorDocumento, setHistoricoPorDocumento] = useState<
+    Record<string, DocumentoHistorico[]>
+  >({});
+  const [historicoCarregando, setHistoricoCarregando] = useState(false);
+
+  async function toggleHistorico(documentoId: string) {
+    if (historicoAbertoId === documentoId) {
+      setHistoricoAbertoId(null);
+      return;
+    }
+
+    setHistoricoAbertoId(documentoId);
+
+    if (historicoPorDocumento[documentoId]) return;
+
+    setHistoricoCarregando(true);
+    const { data, error } = await supabase
+      .from("documento_historico")
+      .select("*")
+      .eq("documento_id", documentoId)
+      .order("criado_em", { ascending: false });
+
+    setHistoricoCarregando(false);
+
+    if (error) {
+      console.error("[Supabase] Erro ao carregar histórico:", error);
+      return;
+    }
+
+    setHistoricoPorDocumento((current) => ({
+      ...current,
+      [documentoId]: (data ?? []) as DocumentoHistorico[],
+    }));
   }
 
   const whatsappLink = buildWhatsAppLink(
@@ -542,7 +601,7 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
                     </div>
 
                     {documento.storage_path && validandoId !== documento.id && (
-                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-selo-700/10 pt-2">
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-selo-700/10 pt-2">
                         {(Object.keys(VALIDACAO_ACOES) as (keyof typeof VALIDACAO_ACOES)[]).map(
                           (acao) => (
                             <button
@@ -555,7 +614,37 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
                             </button>
                           ),
                         )}
+                        <button
+                          type="button"
+                          onClick={() => toggleHistorico(documento.id)}
+                          className="text-xs text-ink/45 hover:text-selo-700 hover:underline"
+                        >
+                          {historicoAbertoId === documento.id ? "Ocultar histórico" : "Histórico"}
+                        </button>
                       </div>
+                    )}
+
+                    {historicoAbertoId === documento.id && (
+                      <ul className="mt-2 space-y-1.5 border-t border-selo-700/10 pt-2">
+                        {historicoCarregando && !historicoPorDocumento[documento.id] ? (
+                          <li className="text-xs text-ink/45">Carregando...</li>
+                        ) : (historicoPorDocumento[documento.id] ?? []).length === 0 ? (
+                          <li className="text-xs text-ink/45">Sem eventos registrados.</li>
+                        ) : (
+                          historicoPorDocumento[documento.id].map((evento) => (
+                            <li key={evento.id} className="text-xs text-ink/60">
+                              <span className="font-medium text-selo-900">
+                                {ACAO_HISTORICO_LABEL[evento.acao]}
+                              </span>{" "}
+                              — {formatDateTime(evento.criado_em)}
+                              {evento.usuario_nome ? ` · ${evento.usuario_nome}` : ""}
+                              {evento.observacao && (
+                                <span className="block text-ink/45">{evento.observacao}</span>
+                              )}
+                            </li>
+                          ))
+                        )}
+                      </ul>
                     )}
 
                     {validandoId === documento.id && (
