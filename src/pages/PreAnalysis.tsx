@@ -71,13 +71,13 @@ export default function PreAnalysis() {
             Pré-análise 100% gratuita e sem compromisso
           </span>
 
-          <span className="inline-flex items-center gap-1.5 text-xs text-ink/50">
+          <span className="inline-flex items-center gap-1.5 text-xs text-ink/60">
             <LockIcon />
             Seus dados são tratados com segurança e utilizados apenas para
             análise do seu caso.
           </span>
 
-          <span className="inline-flex items-center gap-1.5 text-xs text-ink/50">
+          <span className="inline-flex items-center gap-1.5 text-xs text-ink/60">
             <SpecialistIcon />
             Avaliação conduzida por especialista responsável.
           </span>
@@ -89,7 +89,7 @@ export default function PreAnalysis() {
               type="button"
               onClick={goBack}
               aria-label="Voltar"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-selo-700 hover:bg-selo-50"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-selo-700 hover:bg-selo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2"
             >
               ←
             </button>
@@ -187,7 +187,7 @@ function LockIcon() {
   return (
     <svg
       viewBox="0 0 20 20"
-      className="h-3.5 w-3.5 shrink-0 text-ink/40"
+      className="h-3.5 w-3.5 shrink-0 text-ink/55"
       fill="none"
       aria-hidden="true"
     >
@@ -214,7 +214,7 @@ function SpecialistIcon() {
   return (
     <svg
       viewBox="0 0 20 20"
-      className="h-3.5 w-3.5 shrink-0 text-ink/40"
+      className="h-3.5 w-3.5 shrink-0 text-ink/55"
       fill="none"
       aria-hidden="true"
     >

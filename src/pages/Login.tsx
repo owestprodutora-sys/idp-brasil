@@ -49,7 +49,7 @@ export default function Login() {
           Acesso ao Painel
         </h1>
         <p className="mt-1.5 text-sm text-ink/60">
-          Entre com seu e-mail e senha pra acessar os leads.
+          Entre com seu e-mail e senha para acessar os leads.
         </p>
 
         {!isSupabaseConfigured && (
@@ -90,7 +90,11 @@ export default function Login() {
             />
           </div>
 
-          {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="text-sm text-destructive" role="alert">
+              {errorMessage}
+            </p>
+          )}
 
           <Button
             type="submit"

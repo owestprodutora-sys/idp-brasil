@@ -34,14 +34,14 @@ export function YesNoQuestion({
           <button
             type="button"
             onClick={() => onAnswer("sim")}
-            className="h-16 rounded-xl border-2 border-selo-700 bg-selo-700 text-lg font-semibold text-paper transition-colors hover:bg-selo-600 active:bg-selo-600"
+            className="h-16 rounded-xl border-2 border-selo-700 bg-selo-700 text-lg font-semibold text-paper transition-colors hover:bg-selo-600 active:bg-selo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2"
           >
             Sim
           </button>
           <button
             type="button"
             onClick={() => onAnswer("nao")}
-            className="h-16 rounded-xl border-2 border-selo-700/25 bg-white text-lg font-semibold text-selo-900 transition-colors hover:border-selo-700/50 hover:bg-selo-50"
+            className="h-16 rounded-xl border-2 border-selo-700/25 bg-white text-lg font-semibold text-selo-900 transition-colors hover:border-selo-700/50 hover:bg-selo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2"
           >
             Não
           </button>
@@ -68,10 +68,10 @@ function OptionButton({
       onClick={onClick}
       className={
         emphasis
-          ? "h-14 rounded-xl border-2 border-selo-700 bg-selo-700 text-base font-semibold text-paper transition-colors hover:bg-selo-600"
+          ? "h-14 rounded-xl border-2 border-selo-700 bg-selo-700 text-base font-semibold text-paper transition-colors hover:bg-selo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2"
           : muted
-            ? "h-14 rounded-xl border-2 border-transparent bg-transparent text-base font-medium text-ink/50 transition-colors hover:bg-selo-50 hover:text-selo-700"
-            : "h-14 rounded-xl border-2 border-selo-700/25 bg-white text-base font-semibold text-selo-900 transition-colors hover:border-selo-700/50 hover:bg-selo-50"
+            ? "h-14 rounded-xl border-2 border-transparent bg-transparent text-base font-medium text-ink/60 transition-colors hover:bg-selo-50 hover:text-selo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2"
+            : "h-14 rounded-xl border-2 border-selo-700/25 bg-white text-base font-semibold text-selo-900 transition-colors hover:border-selo-700/50 hover:bg-selo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2"
       }
     >
       {label}

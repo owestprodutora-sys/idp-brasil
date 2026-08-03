@@ -49,7 +49,7 @@ export function Footer() {
             {companyInfo.telefone && <li>Tel. {companyInfo.telefone}</li>}
             {companyInfo.whatsapp && <li>WhatsApp {companyInfo.whatsapp}</li>}
             {!hasPhoneInfo && (
-              <li className="text-ink/40">Atendimento via formulário do site</li>
+              <li className="text-ink/55">Atendimento via formulário do site</li>
             )}
           </ul>
         </div>

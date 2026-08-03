@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BRAZILIAN_STATES } from "@/lib/brazilian-states";
 import { formatPhoneInput, isValidBrazilianPhone } from "@/lib/phone";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 import type { PreAnalysisAnswers } from "@/types/pre-analysis";
 
 // Mesma chave usada em ThankYou.tsx. Mantenha os dois valores idênticos.
@@ -125,6 +126,7 @@ export default function Register() {
               name="nome"
               type="text"
               autoComplete="name"
+              required
               value={nome}
               onChange={(event) => setNome(event.target.value)}
               placeholder="Seu nome completo"
@@ -139,16 +141,20 @@ export default function Register() {
               type="tel"
               inputMode="tel"
               autoComplete="tel"
+              required
               value={whatsapp}
               onChange={(event) => setWhatsapp(formatPhoneInput(event.target.value))}
               onBlur={() => setWhatsappTouched(true)}
               placeholder="(00) 00000-0000"
               maxLength={15}
               aria-invalid={whatsappTouched && !isWhatsappValid}
-              className={inputClassName}
+              className={cn(
+                inputClassName,
+                whatsappTouched && !isWhatsappValid && "border-destructive focus:border-destructive",
+              )}
             />
             {whatsappTouched && whatsapp.length > 0 && !isWhatsappValid && (
-              <p className="mt-1.5 text-sm text-red-600">
+              <p className="mt-1.5 text-sm text-destructive" role="alert">
                 Confira o número com DDD, ex.: (55) 99999-9999.
               </p>
             )}
@@ -160,6 +166,7 @@ export default function Register() {
               name="cidade"
               type="text"
               autoComplete="address-level2"
+              required
               value={cidade}
               onChange={(event) => setCidade(event.target.value)}
               placeholder="Sua cidade"
@@ -171,6 +178,7 @@ export default function Register() {
             <select
               id="estado"
               name="estado"
+              required
               value={estado}
               onChange={(event) => setEstado(event.target.value)}
               className={inputClassName}
@@ -189,6 +197,7 @@ export default function Register() {
           <label className="flex items-start gap-3 rounded-xl border border-selo-700/15 bg-selo-50/40 px-4 py-3 text-sm text-ink/70">
             <input
               type="checkbox"
+              required
               checked={lgpdAceito}
               onChange={(event) => setLgpdAceito(event.target.checked)}
               className="mt-0.5 h-5 w-5 shrink-0 rounded border-2 border-selo-700/30 text-selo-700 focus:ring-selo-700"
@@ -201,7 +210,9 @@ export default function Register() {
           </label>
 
           {errorMessage && (
-            <p className="text-sm text-red-600">{errorMessage}</p>
+            <p className="text-sm text-destructive" role="alert">
+              {errorMessage}
+            </p>
           )}
 
           <Button
@@ -213,7 +224,7 @@ export default function Register() {
             {isSubmitting ? "Enviando..." : "Quero Minha Pré-Análise Gratuita"}
           </Button>
 
-          <p className="-mt-1 flex items-center justify-center gap-1.5 text-center text-xs text-ink/50">
+          <p className="-mt-1 flex items-center justify-center gap-1.5 text-center text-xs text-ink/60">
             <Lock className="h-3.5 w-3.5 shrink-0" />
             Gratuito, sigiloso e sem compromisso. Você só decide se quer
             seguir depois de falar com a especialista.

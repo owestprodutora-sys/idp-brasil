@@ -27,7 +27,7 @@ export function WhatsAppFloatButton({ raised = false }: WhatsAppFloatButtonProps
       aria-label="Falar com a IDP Brasil no WhatsApp"
       onClick={() => trackContact("whatsapp_float_button")}
       className={cn(
-        "fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-selo-700 text-paper shadow-lg shadow-selo-900/25 transition-transform hover:scale-105 hover:bg-selo-600 active:scale-95",
+        "fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-selo-700 text-paper shadow-lg shadow-selo-900/25 transition-transform hover:scale-105 hover:bg-selo-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2",
         raised ? "bottom-28 md:bottom-6" : "bottom-6",
       )}
     >

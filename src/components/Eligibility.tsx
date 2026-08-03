@@ -65,7 +65,7 @@ export function Eligibility() {
         </div>
       </div>
 
-      <p className="mt-6 text-sm text-ink/50">
+      <p className="mt-6 text-sm text-ink/60">
         Não encontrou sua condição? Cada caso é analisado individualmente
         conforme a legislação vigente.
       </p>

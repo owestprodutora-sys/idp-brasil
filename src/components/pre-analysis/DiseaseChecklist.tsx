@@ -40,7 +40,7 @@ export function DiseaseChecklist({ defaultValue, onAnswer }: DiseaseChecklistPro
         Qual doença foi diagnosticada pelo seu médico?
       </h1>
 
-      <div className="mt-6 max-h-[42vh] overflow-y-auto rounded-xl border border-selo-700/15 bg-white">
+      <div className="mt-6 max-h-[46vh] overflow-y-auto rounded-xl border border-selo-700/15 bg-white">
         <ul>
           {DISEASES.map((disease) => (
             <DiseaseOption
@@ -100,7 +100,7 @@ function DiseaseOption({
         onClick={onSelect}
         aria-pressed={isSelected}
         className={cn(
-          "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-sm font-medium transition-colors",
+          "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ouro-500 focus-visible:ring-offset-2",
           variant === "standalone" && "rounded-xl border",
           isSelected
             ? variant === "standalone"
