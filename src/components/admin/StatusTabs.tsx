@@ -5,7 +5,8 @@ import type { Lead } from "@/types/lead";
 // Navegação por abas de status — pensada pra escalar quando houver
 // centenas/milhares de leads (um card de resumo não dá conta de navegar,
 // só de destacar números). Uma aba por status do pipeline + "Todos".
-// Rolagem horizontal em telas pequenas, sem quebrar layout.
+// No desktop as pílulas quebram em 2 linhas e cabem na tela, sem barra de
+// rolagem; no mobile (espaço mais apertado) mantém rolagem horizontal.
 export function StatusTabs({
   leads,
   value,
@@ -33,7 +34,11 @@ export function StatusTabs({
   ];
 
   return (
-    <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Filtrar por status">
+    <div
+      className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+      role="tablist"
+      aria-label="Filtrar por status"
+    >
       {tabs.map((tab) => {
         const isActive = value === tab.key;
         return (
