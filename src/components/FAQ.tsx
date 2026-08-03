@@ -23,7 +23,7 @@ const faqs = [
   {
     question: "Preciso entrar na Justiça?",
     answer:
-      "Cada situação é analisada individualmente. Após a avaliação, serão orientados os próximos passos possíveis.",
+      "Na maioria dos casos, não. O reconhecimento costuma ocorrer diretamente pela via administrativa, com prazo médio de cerca de 90 dias. Em situações mais complexas esse prazo pode ser maior, e o caminho judicial só é considerado quando realmente necessário.",
   },
   {
     question: "Posso recuperar valores?",

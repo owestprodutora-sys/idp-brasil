@@ -6,19 +6,22 @@ import { cn } from "@/lib/utils";
 const DISEASES = [
   "Neoplasia Maligna (Câncer)",
   "Doença de Parkinson",
+  "Alzheimer e Outras Demências",
   "Cardiopatia Grave",
   "Esclerose Múltipla",
+  "Cegueira ou Visão Monocular",
   "Nefropatia Grave",
   "Hepatopatia Grave",
   "Hanseníase",
   "Tuberculose Ativa",
-  "Cegueira",
-  "Alienação Mental",
   "AIDS (HIV)",
-  "Espondiloartrose Anquilosante",
-  "Fibrose Cística",
+  "Alienação Mental",
   "Paralisia Irreversível e Incapacitante",
+  "Acidente em Serviço ou Moléstia Profissional",
   "Contaminação por Radiação",
+  "Espondiloartrose Anquilosante",
+  "Doença de Paget em Estágio Avançado",
+  "Fibrose Cística",
 ];
 
 const TAIL_OPTIONS = ["Outra doença", "Não encontrei minha doença", "Não sei informar"];

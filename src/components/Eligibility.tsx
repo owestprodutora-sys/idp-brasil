@@ -1,12 +1,29 @@
 import { Section } from "@/components/Section";
 
-const conditions = [
+// Condições mais reconhecidas pelo público em geral — recebem destaque
+// visual em card para leitura rápida.
+const featuredConditions = [
   "Câncer",
   "Parkinson",
-  "Alzheimer",
+  "Alzheimer e Outras Demências",
   "Cardiopatia Grave",
-  "Visão Monocular",
+  "Cegueira ou Visão Monocular",
   "Esclerose Múltipla",
+];
+
+// Demais condições previstas em lei — listadas de forma compacta para não
+// sobrecarregar a seção com muitos cards repetidos.
+const otherConditions = [
+  "Doença Grave nos Rins",
+  "Doença Grave no Fígado",
+  "Hanseníase",
+  "Tuberculose Ativa",
+  "AIDS",
+  "Paralisia Irreversível",
+  "Acidente em Serviço ou Moléstia Profissional",
+  "Contaminação por Radiação",
+  "Espondiloartrose Anquilosante",
+  "Doença de Paget em Estágio Avançado",
 ];
 
 export function Eligibility() {
@@ -15,9 +32,13 @@ export function Eligibility() {
       <h2 className="font-display text-3xl font-semibold text-selo-900 md:text-4xl">
         Quem pode ter direito?
       </h2>
+      <p className="mt-3 max-w-xl text-ink/60">
+        Aposentados e pensionistas diagnosticados com uma das doenças graves
+        previstas em lei podem ter direito à isenção.
+      </p>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {conditions.map((condition) => (
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {featuredConditions.map((condition) => (
           <div
             key={condition}
             className="flex items-center gap-3 rounded-xl border border-selo-700/10 bg-white px-5 py-4"
@@ -26,17 +47,27 @@ export function Eligibility() {
             <span className="font-medium text-selo-900">{condition}</span>
           </div>
         ))}
+      </div>
 
-        <div className="flex items-center gap-3 rounded-xl border border-dashed border-ouro-500/50 bg-ouro-50/60 px-5 py-4 sm:col-span-2 lg:col-span-3">
-          <span className="font-mono text-lg text-ouro-600">+</span>
-          <span className="font-medium text-selo-900">
-            Outras doenças previstas em lei.
-          </span>
+      <div className="mt-6 rounded-xl border border-selo-700/10 bg-white/60 p-5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-selo-700/70">
+          Também previstas em lei
+        </span>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {otherConditions.map((condition) => (
+            <span
+              key={condition}
+              className="rounded-full border border-selo-700/15 bg-selo-50 px-3.5 py-1.5 text-sm text-selo-900"
+            >
+              {condition}
+            </span>
+          ))}
         </div>
       </div>
 
       <p className="mt-6 text-sm text-ink/50">
-        Cada caso é analisado individualmente conforme a legislação vigente.
+        Não encontrou sua condição? Cada caso é analisado individualmente
+        conforme a legislação vigente.
       </p>
     </Section>
   );
