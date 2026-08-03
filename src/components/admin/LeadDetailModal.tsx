@@ -172,6 +172,68 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     setUploadingId(null);
   }
 
+  // FEATURE 007 — os 3 botões rápidos de validação.
+  const VALIDACAO_ACOES = {
+    VALIDADO: { label: "Documento correto", historico: "DOCUMENTO_VALIDADO" },
+    SOLICITAR_NOVO: { label: "Solicitar novo", historico: "NOVA_VERSAO_SOLICITADA" },
+    INVALIDO: { label: "Documento inválido", historico: "DOCUMENTO_REJEITADO" },
+  } as const;
+
+  const [validandoId, setValidandoId] = useState<string | null>(null);
+  const [validandoAcao, setValidandoAcao] = useState<keyof typeof VALIDACAO_ACOES | null>(null);
+  const [validandoObs, setValidandoObs] = useState("");
+  const [validandoSalvando, setValidandoSalvando] = useState(false);
+
+  function abrirValidacao(documento: Documento, acao: keyof typeof VALIDACAO_ACOES) {
+    setValidandoId(documento.id);
+    setValidandoAcao(acao);
+    setValidandoObs("");
+  }
+
+  async function confirmarValidacao(documento: Documento) {
+    if (!validandoAcao) return;
+    setValidandoSalvando(true);
+
+    const usuarioNome = profile?.nome ?? session?.user.email ?? "Equipe";
+    const observacao = validandoObs.trim() || null;
+
+    const { data: atualizado, error: updateErr } = await supabase
+      .from("documentos")
+      .update({
+        status: validandoAcao,
+        observacoes: observacao,
+        responsavel_id: session?.user.id ?? null,
+        responsavel_nome: usuarioNome,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", documento.id)
+      .select()
+      .single();
+
+    if (updateErr) {
+      console.error("[Supabase] Erro ao validar documento:", updateErr);
+      setUploadError("Não foi possível registrar a validação. Tente novamente.");
+      setValidandoSalvando(false);
+      return;
+    }
+
+    await supabase.from("documento_historico").insert({
+      documento_id: documento.id,
+      lead_id: lead.id,
+      acao: VALIDACAO_ACOES[validandoAcao].historico,
+      observacao,
+      usuario_id: session?.user.id ?? null,
+      usuario_nome: usuarioNome,
+    });
+
+    setDocumentos((current) =>
+      current.map((d) => (d.id === documento.id ? (atualizado as Documento) : d)),
+    );
+    setValidandoSalvando(false);
+    setValidandoId(null);
+    setValidandoAcao(null);
+  }
+
   const whatsappLink = buildWhatsAppLink(
     lead.whatsapp,
     `Olá, ${lead.nome}! Aqui é a equipe da IDP Brasil, sobre a sua pré-análise de isenção do Imposto de Renda.`,
@@ -187,6 +249,21 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     dataProximoContato !== toDateInputValue(lead.data_proximo_contato) ||
     motivoEncerramento !== (lead.motivo_encerramento ?? "") ||
     motivoFinalizacao !== (lead.motivo_finalizacao ?? "");
+
+  async function sincronizarESetarChecklist(novoServico: string | null, servicoAnterior: string | null) {
+    try {
+      const usuarioNome = profile?.nome ?? session?.user.email ?? "Equipe";
+      const resultado = await sincronizarChecklistDocumentos(lead.id, novoServico, servicoAnterior, {
+        id: session?.user.id ?? null,
+        nome: usuarioNome,
+      });
+      setDocumentos(resultado.documentos);
+      setAvisoChecklist(resultado.avisoTrocaComDocumentosAvancados);
+    } catch (checklistError) {
+      console.error("[Documentos] Erro ao sincronizar checklist:", checklistError);
+      setErrorMessage("Não foi possível gerar/atualizar o checklist de documentos.");
+    }
+  }
 
   async function handleSave() {
     setIsSaving(true);
@@ -234,20 +311,7 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     // realmente mudou (a própria função também tem esse early return, mas
     // evitamos a chamada de rede à toa).
     if (novoServico !== servicoAnterior) {
-      try {
-        const usuarioNome = profile?.nome ?? session?.user.email ?? "Equipe";
-        const resultado = await sincronizarChecklistDocumentos(lead.id, novoServico, servicoAnterior, {
-          id: session?.user.id ?? null,
-          nome: usuarioNome,
-        });
-        setDocumentos(resultado.documentos);
-        setAvisoChecklist(resultado.avisoTrocaComDocumentosAvancados);
-      } catch (checklistError) {
-        console.error("[Documentos] Erro ao sincronizar checklist:", checklistError);
-        setErrorMessage(
-          "Lead salvo, mas não foi possível atualizar o checklist de documentos. Tente reabrir o lead.",
-        );
-      }
+      await sincronizarESetarChecklist(novoServico, servicoAnterior);
     }
   }
 
@@ -433,47 +497,98 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
                 return (
                   <li
                     key={documento.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-selo-700/10 px-3 py-2 text-sm"
+                    className="rounded-lg border border-selo-700/10 px-3 py-2 text-sm"
                   >
-                    <div className="min-w-0">
-                      {documento.storage_path ? (
-                        <button
-                          type="button"
-                          onClick={() => setPreviewDocumento(documento)}
-                          className="block truncate text-left text-selo-900 underline-offset-2 hover:underline"
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        {documento.storage_path ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDocumento(documento)}
+                            className="block truncate text-left text-selo-900 underline-offset-2 hover:underline"
+                          >
+                            {documento.nome}
+                          </button>
+                        ) : (
+                          <span className="block truncate text-selo-900">{documento.nome}</span>
+                        )}
+                        {documento.arquivo_nome_original && (
+                          <span className="block truncate text-xs text-ink/45">
+                            {documento.arquivo_nome_original}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusOption.badgeClass}`}
                         >
-                          {documento.nome}
-                        </button>
-                      ) : (
-                        <span className="block truncate text-selo-900">{documento.nome}</span>
-                      )}
-                      {documento.arquivo_nome_original && (
-                        <span className="block truncate text-xs text-ink/45">
-                          {documento.arquivo_nome_original}
+                          {statusOption.emoji} {statusOption.label}
                         </span>
-                      )}
+                        <label className="cursor-pointer text-xs font-medium text-selo-700 underline-offset-2 hover:underline">
+                          {isUploading ? "Enviando..." : documento.storage_path ? "Substituir" : "Adicionar"}
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (file) handleUpload(documento, file);
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusOption.badgeClass}`}
-                      >
-                        {statusOption.emoji} {statusOption.label}
-                      </span>
-                      <label className="cursor-pointer text-xs font-medium text-selo-700 underline-offset-2 hover:underline">
-                        {isUploading ? "Enviando..." : documento.storage_path ? "Substituir" : "Adicionar"}
-                        <input
-                          type="file"
-                          accept=".pdf,.png,.jpg,.jpeg"
-                          className="hidden"
-                          disabled={isUploading}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            e.target.value = "";
-                            if (file) handleUpload(documento, file);
-                          }}
+
+                    {documento.storage_path && validandoId !== documento.id && (
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-selo-700/10 pt-2">
+                        {(Object.keys(VALIDACAO_ACOES) as (keyof typeof VALIDACAO_ACOES)[]).map(
+                          (acao) => (
+                            <button
+                              key={acao}
+                              type="button"
+                              onClick={() => abrirValidacao(documento, acao)}
+                              className="text-xs font-medium text-ink/60 hover:text-selo-700 hover:underline"
+                            >
+                              {VALIDACAO_ACOES[acao].label}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    )}
+
+                    {validandoId === documento.id && (
+                      <div className="mt-2 space-y-2 border-t border-selo-700/10 pt-2">
+                        <p className="text-xs font-medium text-selo-900">
+                          {validandoAcao && VALIDACAO_ACOES[validandoAcao].label} — observação
+                          (opcional)
+                        </p>
+                        <textarea
+                          value={validandoObs}
+                          onChange={(e) => setValidandoObs(e.target.value)}
+                          rows={2}
+                          className="w-full resize-none rounded-lg border border-selo-700/20 bg-white px-2 py-1.5 text-xs text-selo-900 focus:border-selo-700 focus:outline-none"
                         />
-                      </label>
-                    </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            disabled={validandoSalvando}
+                            onClick={() => confirmarValidacao(documento)}
+                            className="text-xs font-semibold text-selo-700 hover:underline disabled:opacity-50"
+                          >
+                            {validandoSalvando ? "Salvando..." : "Confirmar"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setValidandoId(null)}
+                            className="text-xs text-ink/45 hover:underline"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 );
               })}

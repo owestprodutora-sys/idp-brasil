@@ -66,6 +66,9 @@ export default function Register() {
       qual_doenca: answers?.qualDoenca ?? null,
       laudo: answers?.laudo ?? null,
       lgpd_aceito: lgpdAceito,
+      // Explícito porque o default da coluna no banco já ficou
+      // desatualizado uma vez (ver sql/011) — não depender só dele.
+      status: "NOVO_LEAD",
     });
 
     setIsSubmitting(false);
