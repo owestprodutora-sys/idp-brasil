@@ -78,6 +78,67 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     };
   }, [lead.id]);
 
+  // FEATURE 005 — upload manual. id do documento cujo input está com envio
+  // em andamento (desabilita só aquele item, não o modal inteiro).
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleUpload(documento: Documento, file: File) {
+    setUploadingId(documento.id);
+    setUploadError(null);
+
+    const isSubstituicao = documento.storage_path !== null;
+    const path = `${lead.id}/${documento.tipo}-${Date.now()}-${file.name}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("documentos-clientes")
+      .upload(path, file);
+
+    if (uploadErr) {
+      console.error("[Storage] Erro ao enviar documento:", uploadErr);
+      setUploadError("Não foi possível enviar o arquivo. Tente novamente.");
+      setUploadingId(null);
+      return;
+    }
+
+    const usuarioNome = profile?.nome ?? session?.user.email ?? "Equipe";
+    const { data: atualizado, error: updateErr } = await supabase
+      .from("documentos")
+      .update({
+        storage_path: path,
+        arquivo_nome_original: file.name,
+        mime_type: file.type || null,
+        tamanho_bytes: file.size,
+        status: "RECEBIDO",
+        responsavel_id: session?.user.id ?? null,
+        responsavel_nome: usuarioNome,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", documento.id)
+      .select()
+      .single();
+
+    if (updateErr) {
+      console.error("[Supabase] Erro ao atualizar documento:", updateErr);
+      setUploadError("Arquivo enviado, mas não foi possível atualizar o registro.");
+      setUploadingId(null);
+      return;
+    }
+
+    await supabase.from("documento_historico").insert({
+      documento_id: documento.id,
+      lead_id: lead.id,
+      acao: isSubstituicao ? "DOCUMENTO_SUBSTITUIDO" : "DOCUMENTO_ENVIADO",
+      usuario_id: session?.user.id ?? null,
+      usuario_nome: usuarioNome,
+    });
+
+    setDocumentos((current) =>
+      current.map((d) => (d.id === documento.id ? (atualizado as Documento) : d)),
+    );
+    setUploadingId(null);
+  }
+
   const whatsappLink = buildWhatsAppLink(
     lead.whatsapp,
     `Olá, ${lead.nome}! Aqui é a equipe da IDP Brasil, sobre a sua pré-análise de isenção do Imposto de Renda.`,
@@ -335,22 +396,47 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
             <ul className="space-y-2">
               {documentos.map((documento) => {
                 const statusOption = resolveDocumentoStatus(documento.status);
+                const isUploading = uploadingId === documento.id;
                 return (
                   <li
                     key={documento.id}
                     className="flex items-center justify-between gap-3 rounded-lg border border-selo-700/10 px-3 py-2 text-sm"
                   >
-                    <span className="text-selo-900">{documento.nome}</span>
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${statusOption.badgeClass}`}
-                    >
-                      {statusOption.emoji} {statusOption.label}
-                    </span>
+                    <div className="min-w-0">
+                      <span className="block truncate text-selo-900">{documento.nome}</span>
+                      {documento.arquivo_nome_original && (
+                        <span className="block truncate text-xs text-ink/45">
+                          {documento.arquivo_nome_original}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusOption.badgeClass}`}
+                      >
+                        {statusOption.emoji} {statusOption.label}
+                      </span>
+                      <label className="cursor-pointer text-xs font-medium text-selo-700 underline-offset-2 hover:underline">
+                        {isUploading ? "Enviando..." : documento.storage_path ? "Substituir" : "Adicionar"}
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          className="hidden"
+                          disabled={isUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (file) handleUpload(documento, file);
+                          }}
+                        />
+                      </label>
+                    </div>
                   </li>
                 );
               })}
             </ul>
           )}
+          {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
         </div>
 
         {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
