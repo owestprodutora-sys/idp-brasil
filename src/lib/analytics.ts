@@ -126,10 +126,13 @@ export function trackViewContent(contentName: string) {
 }
 
 /**
- * Lead — envio bem-sucedido do formulário de pré-análise, ou chegada
- * na página de agradecimento (ThankYou).
+ * Lead — dispara SOMENTE na chegada à página de agradecimento
+ * (ThankYou), que representa um lead válido (formulário enviado com
+ * sucesso e salvo no banco). Não deve ser chamada em nenhum outro
+ * ponto do fluxo (ex.: no submit do formulário), para evitar
+ * duplicação do evento generate_lead.
  */
-export function trackLead(source: "form_submit" | "thank_you_page") {
+export function trackLead(source: "thank_you_page") {
   safeGtag("event", "generate_lead", { lead_source: source });
   safeFbq("track", "Lead", { lead_source: source });
 }

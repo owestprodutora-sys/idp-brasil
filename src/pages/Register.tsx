@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Lock, ShieldCheck, Sparkles } from "lucide-react";
@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { BRAZILIAN_STATES } from "@/lib/brazilian-states";
 import { formatPhoneInput, isValidBrazilianPhone } from "@/lib/phone";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
-import { trackLead } from "@/lib/analytics";
 import type { PreAnalysisAnswers } from "@/types/pre-analysis";
+
+// Mesma chave usada em ThankYou.tsx. Mantenha os dois valores idênticos.
+const LEAD_TRACKED_KEY = "idp_lead_tracked";
 
 export default function Register() {
   const location = useLocation();
@@ -23,6 +25,19 @@ export default function Register() {
   const [lgpdAceito, setLgpdAceito] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Ao entrar na página de cadastro, um novo processo de geração de lead
+  // está começando — libera a blindagem de /obrigado para que, se este
+  // envio for concluído com sucesso, a nova chegada em /obrigado gere uma
+  // nova conversão (e não seja bloqueada por um lead anterior na mesma aba).
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(LEAD_TRACKED_KEY);
+    } catch {
+      // sessionStorage indisponível — nada a fazer aqui; não afeta o
+      // disparo do generate_lead em si, apenas a blindagem contra refresh.
+    }
+  }, []);
 
   const isWhatsappValid = isValidBrazilianPhone(whatsapp);
 
@@ -62,7 +77,6 @@ export default function Register() {
       return;
     }
 
-    trackLead("form_submit");
     navigate("/obrigado");
   }
 

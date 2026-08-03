@@ -7,9 +7,33 @@ import { Button } from "@/components/ui/button";
 import { companyInfo } from "@/lib/company-info";
 import { trackLead } from "@/lib/analytics";
 
+// Chave de sessionStorage usada para impedir que um F5 (ou reabertura da
+// mesma aba) em /obrigado dispare generate_lead de novo para o mesmo lead.
+// É limpa em Register.tsx quando um novo cadastro é iniciado, permitindo
+// que um novo envio válido gere uma nova conversão. Mantenha o valor
+// idêntico nos dois arquivos.
+const LEAD_TRACKED_KEY = "idp_lead_tracked";
+
 export default function ThankYou() {
   useEffect(() => {
+    let alreadyTracked = false;
+    try {
+      alreadyTracked = sessionStorage.getItem(LEAD_TRACKED_KEY) === "true";
+    } catch {
+      // sessionStorage indisponível (ex.: navegação privada restrita);
+      // segue o comportamento anterior e dispara o evento normalmente.
+    }
+
+    if (alreadyTracked) return;
+
     trackLead("thank_you_page");
+
+    try {
+      sessionStorage.setItem(LEAD_TRACKED_KEY, "true");
+    } catch {
+      // Se não for possível persistir, não há como blindar contra refresh
+      // nesta sessão; o evento já foi disparado corretamente acima.
+    }
   }, []);
 
   return (
