@@ -1,116 +1,53 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
-import { LeadsTable } from "@/components/admin/LeadsTable";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
-import type { Lead } from "@/types/lead";
+import { GestorDashboard } from "@/pages/admin/GestorDashboard";
+import { SpecialistDashboard } from "@/pages/admin/SpecialistDashboard";
 
+// Roteador por perfil (TASK-007A): decide qual dashboard mostrar depois do
+// login, sem mudar a URL (/admin continua sendo o destino do login pros
+// dois perfis). Adicionar um perfil novo no futuro é só adicionar um case
+// aqui + o valor correspondente em `profiles.role` (sql/006).
 export default function Admin() {
-  const { signOut } = useAuth();
+  const { profile, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false);
-      return;
-    }
-
-    let isActive = true;
-
-    async function loadLeads() {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!isActive) return;
-
-      if (error) {
-        console.error("[Supabase] Erro ao carregar leads:", error);
-        setErrorMessage(
-          "Não foi possível carregar os leads agora. Tente novamente em instantes.",
-        );
-      } else {
-        setLeads((data ?? []) as Lead[]);
-      }
-      setIsLoading(false);
-    }
-
-    loadLeads();
-    return () => {
-      isActive = false;
-    };
-  }, []);
 
   async function handleSignOut() {
     await signOut();
     navigate("/login", { replace: true });
   }
 
-  return (
-    <div className="min-h-screen bg-paper px-6 py-10">
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <Link to="/" className="font-display text-lg font-semibold text-selo-700">
-              IDP <span className="text-ouro-600">Brasil</span>
-            </Link>
-            <h1 className="mt-1 font-display text-2xl font-semibold text-selo-900">
-              Painel Adrieli
-            </h1>
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={handleSignOut}
-            className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
-          >
-            Sair
-          </Button>
-        </div>
-
-        <div className="mt-8">
-          {!isSupabaseConfigured && (
-            <p className="rounded-lg border border-ouro-500/40 bg-ouro-50 px-4 py-3 text-sm text-selo-900">
-              O Supabase ainda não está configurado neste ambiente (arquivo
-              `.env`), então não é possível carregar os leads.
-            </p>
-          )}
-
-          {isSupabaseConfigured && isLoading && (
-            <p className="text-sm text-ink/60">Carregando leads...</p>
-          )}
-
-          {isSupabaseConfigured && !isLoading && errorMessage && (
-            <p className="text-sm text-red-600">{errorMessage}</p>
-          )}
-
-          {isSupabaseConfigured && !isLoading && !errorMessage && leads.length === 0 && (
-            <p className="text-sm text-ink/60">
-              Nenhum lead recebido ainda.
-            </p>
-          )}
-
-          {isSupabaseConfigured && !isLoading && !errorMessage && leads.length > 0 && (
-            <LeadsTable leads={leads} onView={setSelectedLead} />
-          )}
-        </div>
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink/50">
+        Carregando...
       </div>
+    );
+  }
 
-      {selectedLead && (
-        <LeadDetailModal
-          lead={selectedLead}
-          onClose={() => setSelectedLead(null)}
-        />
-      )}
-    </div>
-  );
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-paper px-6 text-center">
+        <p className="max-w-sm text-sm text-ink/60">
+          Seu login funcionou, mas ainda não existe um perfil cadastrado para
+          esta conta. Peça para um gestor cadastrar seu nome, e-mail e função
+          na tabela <code className="rounded bg-ink/5 px-1 py-0.5">profiles</code>.
+        </p>
+        <Button
+          variant="outline"
+          onClick={handleSignOut}
+          className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+        >
+          Sair
+        </Button>
+      </div>
+    );
+  }
+
+  if (profile.role === "gestor") {
+    return <GestorDashboard />;
+  }
+
+  return <SpecialistDashboard />;
 }
