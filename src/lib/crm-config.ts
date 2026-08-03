@@ -2,14 +2,19 @@
 // Fonte única de verdade para status, prioridade e motivo de encerramento,
 // usada pelo badge, pelos filtros, pelos cards e pelo modal de detalhes.
 
+// MVP 1.1 — Fase 1: pipeline operacional linear (sql/008).
+// Substitui o conjunto de status do TASK-007. FINALIZADO é o único status
+// final — o desfecho fica em `motivo_finalizacao`, não em status separados
+// (ver MOTIVO_FINALIZACAO_OPTIONS mais abaixo).
 export type LeadStatus =
-  | "novo"
-  | "primeiro_contato_pendente"
-  | "em_analise"
-  | "aguardando_documento"
-  | "elegivel"
-  | "nao_elegivel"
-  | "arquivado";
+  | "NOVO_LEAD"
+  | "PRE_ANALISE"
+  | "DOCUMENTOS_SOLICITADOS"
+  | "DOCUMENTACAO_COMPLETA"
+  | "CONSULTA_AGENDADA"
+  | "CONTRATO"
+  | "EXECUCAO"
+  | "FINALIZADO";
 
 export interface StatusOption {
   value: LeadStatus;
@@ -20,58 +25,72 @@ export interface StatusOption {
 
 export const STATUS_OPTIONS: StatusOption[] = [
   {
-    value: "novo",
+    value: "NOVO_LEAD",
     emoji: "🔴",
     label: "Novo lead",
     badgeClass: "bg-red-50 text-red-700 border-red-200",
   },
   {
-    value: "primeiro_contato_pendente",
-    emoji: "🟠",
-    label: "Primeiro contato pendente",
-    badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
-  },
-  {
-    value: "em_analise",
+    value: "PRE_ANALISE",
     emoji: "🔵",
-    label: "Em análise",
+    label: "Pré-análise",
     badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
   },
   {
-    value: "aguardando_documento",
+    value: "DOCUMENTOS_SOLICITADOS",
     emoji: "🟣",
-    label: "Aguardando documento",
+    label: "Documentos solicitados",
     badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
   },
   {
-    value: "elegivel",
+    value: "DOCUMENTACAO_COMPLETA",
     emoji: "🟢",
-    label: "Elegível / Em andamento",
+    label: "Documentação completa",
     badgeClass: "bg-green-50 text-green-700 border-green-200",
   },
   {
-    value: "nao_elegivel",
-    emoji: "⚫",
-    label: "Não elegível",
-    badgeClass: "bg-ink/10 text-ink/70 border-ink/20",
+    value: "CONSULTA_AGENDADA",
+    emoji: "📅",
+    label: "Consulta agendada",
+    badgeClass: "bg-cyan-50 text-cyan-700 border-cyan-200",
   },
   {
-    value: "arquivado",
-    emoji: "⚪",
-    label: "Arquivado",
-    badgeClass: "bg-ink/5 text-ink/45 border-ink/10",
+    value: "CONTRATO",
+    emoji: "📄",
+    label: "Contrato",
+    badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  },
+  {
+    value: "EXECUCAO",
+    emoji: "⚙️",
+    label: "Execução",
+    badgeClass: "bg-ouro-50 text-ouro-600 border-ouro-500/40",
+  },
+  {
+    value: "FINALIZADO",
+    emoji: "⚫",
+    label: "Finalizado",
+    badgeClass: "bg-ink/10 text-ink/70 border-ink/20",
   },
 ];
 
 const STATUS_MAP = new Map(STATUS_OPTIONS.map((option) => [option.value, option]));
 
-// Alguns leads antigos (criados antes do TASK-007) podem ter status do
-// esquema anterior. Mapeamos para o equivalente mais próximo do novo
-// conjunto para não quebrar a exibição.
+// Leads criados antes da migração MVP 1.1 (esquema TASK-007 e anterior)
+// podem, em tese, ainda chegar com um status antigo (ex: um insert feito
+// direto no banco fora da migração). Mapeamos pro equivalente mais próximo
+// do pipeline novo pra não quebrar a exibição.
 const LEGACY_STATUS_MAP: Record<string, LeadStatus> = {
-  contatado: "primeiro_contato_pendente",
-  convertido: "elegivel",
-  perdido: "arquivado",
+  novo: "NOVO_LEAD",
+  primeiro_contato_pendente: "PRE_ANALISE",
+  em_analise: "PRE_ANALISE",
+  aguardando_documento: "DOCUMENTOS_SOLICITADOS",
+  elegivel: "DOCUMENTACAO_COMPLETA",
+  nao_elegivel: "FINALIZADO",
+  arquivado: "FINALIZADO",
+  contatado: "PRE_ANALISE",
+  convertido: "DOCUMENTACAO_COMPLETA",
+  perdido: "FINALIZADO",
 };
 
 export function resolveStatus(status: string): StatusOption {
@@ -86,8 +105,58 @@ export function resolveStatus(status: string): StatusOption {
   );
 }
 
-// Status que representam um caso encerrado (não precisam mais de ação).
-export const CLOSED_STATUSES: LeadStatus[] = ["elegivel", "nao_elegivel", "arquivado"];
+// Único status que representa um caso encerrado (não precisa mais de ação).
+export const CLOSED_STATUSES: LeadStatus[] = ["FINALIZADO"];
+
+// MVP 1.1 — desfecho do pipeline quando status = FINALIZADO. Não usar em
+// nenhum outro status (ver constraint em sql/008).
+export type MotivoFinalizacao =
+  | "CONTRATADO_CONCLUIDO"
+  | "NAO_ELEGIVEL"
+  | "DESISTENCIA_CLIENTE"
+  | "SEM_RETORNO"
+  | "ARQUIVADO"
+  | "DUPLICADO"
+  | "ENCAMINHADO";
+
+export const MOTIVO_FINALIZACAO_OPTIONS: { value: MotivoFinalizacao; label: string }[] = [
+  { value: "CONTRATADO_CONCLUIDO", label: "Contratado / concluído" },
+  { value: "NAO_ELEGIVEL", label: "Não elegível" },
+  { value: "DESISTENCIA_CLIENTE", label: "Desistência do cliente" },
+  { value: "SEM_RETORNO", label: "Sem retorno" },
+  { value: "ARQUIVADO", label: "Arquivado" },
+  { value: "DUPLICADO", label: "Duplicado" },
+  { value: "ENCAMINHADO", label: "Encaminhado" },
+];
+
+export function motivoFinalizacaoLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  return MOTIVO_FINALIZACAO_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
+
+// MVP 1.1 — catálogo inicial de serviços (item 4, checklist documental usa
+// o mesmo slug pra saber quais documentos pedir).
+export const SERVICO_OPTIONS: { value: string; label: string }[] = [
+  { value: "isencao_ir", label: "Isenção IR" },
+  { value: "inss_acima_teto", label: "INSS acima do teto" },
+  { value: "ipva_pcd", label: "IPVA PCD" },
+];
+
+export function servicoLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  return SERVICO_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
+
+export const ORIGEM_OPTIONS: { value: string; label: string }[] = [
+  { value: "site", label: "Site" },
+  { value: "indicacao", label: "Indicação" },
+  { value: "outro", label: "Outro" },
+];
+
+export function origemLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  return ORIGEM_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
 
 export type LeadPriority = "alta" | "normal" | "baixa";
 
@@ -181,7 +250,7 @@ export function isAguardandoDocumentoAtrasado(
   ultimoContato: string | null | undefined,
   createdAt: string,
 ): boolean {
-  if (resolveStatus(status).value !== "aguardando_documento") return false;
+  if (resolveStatus(status).value !== "DOCUMENTOS_SOLICITADOS") return false;
 
   const referencia = ultimoContato ?? createdAt;
   const dias = (Date.now() - new Date(referencia).getTime()) / (1000 * 60 * 60 * 24);

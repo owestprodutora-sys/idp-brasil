@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { documentLabel, yesNoLabel } from "@/lib/answer-labels";
 import {
   MOTIVO_ENCERRAMENTO_OPTIONS,
+  MOTIVO_FINALIZACAO_OPTIONS,
   PRIORITY_OPTIONS,
   PROXIMA_ACAO_SUGESTOES,
+  SERVICO_OPTIONS,
   STATUS_OPTIONS,
+  origemLabel,
 } from "@/lib/crm-config";
 import { formatDateTime, toDateInputValue } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -22,6 +25,7 @@ interface LeadDetailModalProps {
 
 export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalProps) {
   const [status, setStatus] = useState(lead.status);
+  const [servico, setServico] = useState(lead.servico ?? "");
   const [prioridade, setPrioridade] = useState(lead.prioridade ?? "normal");
   const [observacoes, setObservacoes] = useState(lead.observacoes ?? "");
   const [ultimoContato, setUltimoContato] = useState(toDateInputValue(lead.ultimo_contato));
@@ -30,6 +34,7 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     toDateInputValue(lead.data_proximo_contato),
   );
   const [motivoEncerramento, setMotivoEncerramento] = useState(lead.motivo_encerramento ?? "");
+  const [motivoFinalizacao, setMotivoFinalizacao] = useState(lead.motivo_finalizacao ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedJustNow, setSavedJustNow] = useState(false);
@@ -41,12 +46,14 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
 
   const hasChanges =
     status !== lead.status ||
+    servico !== (lead.servico ?? "") ||
     prioridade !== (lead.prioridade ?? "normal") ||
     observacoes !== (lead.observacoes ?? "") ||
     ultimoContato !== toDateInputValue(lead.ultimo_contato) ||
     proximaAcao !== (lead.proxima_acao ?? "") ||
     dataProximoContato !== toDateInputValue(lead.data_proximo_contato) ||
-    motivoEncerramento !== (lead.motivo_encerramento ?? "");
+    motivoEncerramento !== (lead.motivo_encerramento ?? "") ||
+    motivoFinalizacao !== (lead.motivo_finalizacao ?? "");
 
   async function handleSave() {
     setIsSaving(true);
@@ -55,12 +62,16 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
 
     const updates = {
       status,
+      servico: servico === "" ? null : servico,
       prioridade,
       observacoes: observacoes.trim() === "" ? null : observacoes.trim(),
       ultimo_contato: ultimoContato === "" ? null : ultimoContato,
       proxima_acao: proximaAcao.trim() === "" ? null : proximaAcao.trim(),
       data_proximo_contato: dataProximoContato === "" ? null : dataProximoContato,
       motivo_encerramento: motivoEncerramento === "" ? null : motivoEncerramento,
+      // Motivo de finalização só faz sentido quando o status é FINALIZADO —
+      // se a especialista reabrir o caso, limpamos o motivo antigo.
+      motivo_finalizacao: status === "FINALIZADO" && motivoFinalizacao !== "" ? motivoFinalizacao : null,
     };
 
     const { data, error } = await supabase
@@ -104,7 +115,9 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
 
         <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
           <Info label="Telefone" value={lead.whatsapp} />
+          <Info label="E-mail" value={lead.email ?? "—"} />
           <Info label="Cidade" value={`${lead.cidade} / ${lead.estado}`} />
+          <Info label="Origem" value={origemLabel(lead.origem)} />
         </dl>
 
         <div className="mt-6 space-y-4 border-t border-selo-700/10 pt-6 text-sm">
@@ -147,6 +160,38 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
                 ))}
               </select>
             </Field>
+
+            <Field label="Serviço">
+              <select
+                value={servico}
+                onChange={(e) => setServico(e.target.value)}
+                className="h-10 w-full rounded-lg border border-selo-700/20 bg-white px-3 text-sm text-selo-900 focus:border-selo-700 focus:outline-none"
+              >
+                <option value="">Não definido</option>
+                {SERVICO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            {status === "FINALIZADO" && (
+              <Field label="Motivo de finalização">
+                <select
+                  value={motivoFinalizacao}
+                  onChange={(e) => setMotivoFinalizacao(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-selo-700/20 bg-white px-3 text-sm text-selo-900 focus:border-selo-700 focus:outline-none"
+                >
+                  <option value="">Selecione o motivo</option>
+                  {MOTIVO_FINALIZACAO_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
 
             <Field label="Último contato">
               <input

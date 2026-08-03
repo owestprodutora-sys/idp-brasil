@@ -1,21 +1,31 @@
 import type { Lead } from "@/types/lead";
 
-// TASK-007B — "Em atendimento" agrupa os status intermediários (primeiro
-// contato pendente + em análise). "Aguardando documento" tem card próprio
-// porque é um gargalo específico que o gestor precisa enxergar separado.
-const EM_ATENDIMENTO_STATUSES = ["primeiro_contato_pendente", "em_analise"];
+// MVP 1.1 — "Em atendimento" agrupa tudo que já saiu de NOVO_LEAD mas não
+// chegou em DOCUMENTOS_SOLICITADOS nem em FINALIZADO (esse último tem card
+// próprio, quebrado por motivo_finalizacao).
+const EM_ATENDIMENTO_STATUSES = [
+  "PRE_ANALISE",
+  "DOCUMENTACAO_COMPLETA",
+  "CONSULTA_AGENDADA",
+  "CONTRATO",
+  "EXECUCAO",
+];
 
 export function GestorMetricsCards({ leads }: { leads: Lead[] }) {
   const total = leads.length;
-  const novos = leads.filter((lead) => lead.status === "novo").length;
+  const novos = leads.filter((lead) => lead.status === "NOVO_LEAD").length;
   const emAtendimento = leads.filter((lead) =>
     EM_ATENDIMENTO_STATUSES.includes(lead.status),
   ).length;
   const aguardandoDocumento = leads.filter(
-    (lead) => lead.status === "aguardando_documento",
+    (lead) => lead.status === "DOCUMENTOS_SOLICITADOS",
   ).length;
-  const convertidos = leads.filter((lead) => lead.status === "elegivel").length;
-  const naoElegiveis = leads.filter((lead) => lead.status === "nao_elegivel").length;
+  const convertidos = leads.filter(
+    (lead) => lead.status === "FINALIZADO" && lead.motivo_finalizacao === "CONTRATADO_CONCLUIDO",
+  ).length;
+  const naoElegiveis = leads.filter(
+    (lead) => lead.status === "FINALIZADO" && lead.motivo_finalizacao === "NAO_ELEGIVEL",
+  ).length;
   const taxaConversao = total > 0 ? `${((convertidos / total) * 100).toFixed(1)}%` : "—";
 
   const cards = [

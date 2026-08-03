@@ -3,10 +3,10 @@ import { CLOSED_STATUSES, isSemContatoRecente } from "@/lib/crm-config";
 import type { Lead } from "@/types/lead";
 
 export function DashboardCards({ leads }: { leads: Lead[] }) {
-  const novosLeads = leads.filter((lead) => lead.status === "novo").length;
-  const emAnalise = leads.filter((lead) => lead.status === "em_analise").length;
+  const novosLeads = leads.filter((lead) => lead.status === "NOVO_LEAD").length;
+  const emAnalise = leads.filter((lead) => lead.status === "PRE_ANALISE").length;
   const aguardandoDocumentos = leads.filter(
-    (lead) => lead.status === "aguardando_documento",
+    (lead) => lead.status === "DOCUMENTOS_SOLICITADOS",
   ).length;
   const concluidos = leads.filter((lead) =>
     CLOSED_STATUSES.includes(lead.status as (typeof CLOSED_STATUSES)[number]),

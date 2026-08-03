@@ -6,7 +6,7 @@ import type { Lead } from "@/types/lead";
 // visuais lidos a partir dos leads já carregados; nenhuma automação
 // externa (e-mail, WhatsApp, etc.) é disparada por aqui.
 export function AlertasOperacionais({ leads }: { leads: Lead[] }) {
-  const novosAguardandoContato = leads.filter((lead) => lead.status === "novo");
+  const novosAguardandoContato = leads.filter((lead) => lead.status === "NOVO_LEAD");
   const aguardandoDocumentoAtrasado = leads.filter((lead) =>
     isAguardandoDocumentoAtrasado(lead.status, lead.ultimo_contato, lead.created_at),
   );

@@ -59,7 +59,7 @@ export function SpecialistDashboard() {
     return [...filtered].sort((a, b) => {
       const scoreOf = (lead: Lead) => {
         let score = 0;
-        if (lead.status === "novo") score -= 1000;
+        if (lead.status === "NOVO_LEAD") score -= 1000;
         if (lead.prioridade === "alta") score -= 100;
         if (isProximaAcaoVencida(lead.data_proximo_contato)) score -= 10;
         return score;

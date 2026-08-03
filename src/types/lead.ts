@@ -2,6 +2,7 @@ export interface Lead {
   id: string;
   nome: string;
   whatsapp: string;
+  email: string | null;
   cidade: string;
   estado: string;
   aposentado: string | null;
@@ -11,6 +12,10 @@ export interface Lead {
   laudo: string | null;
   lgpd_aceito: boolean;
   status: string;
+  // MVP 1.1 — Fase 1 (pipeline)
+  servico: string | null;
+  origem: string;
+  motivo_finalizacao: string | null;
   // Campos de CRM operacional (TASK-007)
   prioridade: string | null;
   // Preparação para múltiplos profissionais (TASK-007B) — hoje sempre nulo,
