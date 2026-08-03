@@ -9,6 +9,7 @@ import { FinanceiroPlaceholder } from "@/components/admin/FinanceiroPlaceholder"
 import { GestorLeadsTable } from "@/components/admin/GestorLeadsTable";
 import { GestorMetricsCards } from "@/components/admin/GestorMetricsCards";
 import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilters";
+import { StatusTabs } from "@/components/admin/StatusTabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useLeads } from "@/hooks/useLeads";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -116,6 +117,12 @@ export function GestorDashboard() {
                 Visão somente leitura — edições de status, prioridade e observações continuam
                 sendo feitas pela especialista no próprio CRM.
               </p>
+
+              <StatusTabs
+                leads={leads}
+                value={filters.status}
+                onChange={(status) => setFilters((current) => ({ ...current, status }))}
+              />
 
               <LeadFilters value={filters} onChange={setFilters} />
 

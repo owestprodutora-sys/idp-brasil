@@ -7,6 +7,7 @@ import { FollowUpPanel } from "@/components/admin/FollowUpPanel";
 import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
 import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilters";
 import { LeadsTable } from "@/components/admin/LeadsTable";
+import { StatusTabs } from "@/components/admin/StatusTabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useLeads } from "@/hooks/useLeads";
 import { isProximaAcaoVencida, isSemContatoRecente, type LeadStatus } from "@/lib/crm-config";
@@ -120,14 +121,20 @@ export function SpecialistDashboard() {
 
           {isSupabaseConfigured && !isLoading && !errorMessage && leads.length > 0 && (
             <>
-              <FollowUpPanel leads={leads} onConfirmado={handleLeadUpdated} />
-
               <DashboardCards
                 leads={leads}
                 activeStatus={filters.status}
                 semContatoRecenteAtivo={filters.semContatoRecente}
                 onSelectStatus={handleSelectStatusFromCard}
                 onToggleSemContatoRecente={handleToggleSemContatoRecenteFromCard}
+              />
+
+              <FollowUpPanel leads={leads} onConfirmado={handleLeadUpdated} />
+
+              <StatusTabs
+                leads={leads}
+                value={filters.status}
+                onChange={(status) => setFilters((current) => ({ ...current, status }))}
               />
 
               <LeadFilters value={filters} onChange={setFilters} />

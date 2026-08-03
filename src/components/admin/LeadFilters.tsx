@@ -1,8 +1,10 @@
-import { PRIORITY_OPTIONS, STATUS_OPTIONS } from "@/lib/crm-config";
+import { PRIORITY_OPTIONS } from "@/lib/crm-config";
 
 export type DateFilter = "todos" | "hoje" | "7dias" | "30dias";
 
 export interface LeadFiltersValue {
+  // Controlado pelas abas de status (StatusTabs) e pelos cards do
+  // dashboard — não há mais um seletor próprio aqui (ver StatusTabs).
   status: string;
   prioridade: string;
   data: DateFilter;
@@ -20,19 +22,6 @@ export function LeadFilters({
 }) {
   return (
     <div className="flex flex-wrap gap-3">
-      <select
-        value={value.status}
-        onChange={(e) => onChange({ ...value, status: e.target.value })}
-        className="h-9 rounded-lg border border-selo-700/20 bg-white px-3 text-sm text-selo-900 focus:border-selo-700 focus:outline-none"
-      >
-        <option value="todos">Todos os status</option>
-        {STATUS_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.emoji} {option.label}
-          </option>
-        ))}
-      </select>
-
       <select
         value={value.prioridade}
         onChange={(e) => onChange({ ...value, prioridade: e.target.value })}

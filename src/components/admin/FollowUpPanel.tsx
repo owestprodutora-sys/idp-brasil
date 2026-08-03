@@ -1,4 +1,4 @@
-import { Check, Copy, MessageCircle } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy, MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -19,6 +19,10 @@ import type { Lead } from "@/types/lead";
 //   4. Clica em "Confirmar envio" — só então o sistema registra o envio e
 //      recalcula o próximo contato (ultimo_contato + intervalo padrão).
 // Não existe envio automático de mensagem em nenhum passo.
+//
+// UI/UX: painel recolhido por padrão (accordion) — só expande quando a
+// especialista clica em "Ver acompanhamento". O menu de novos leads
+// (DashboardCards) fica acima, na parte superior da tela.
 export function FollowUpPanel({
   leads,
   onConfirmado,
@@ -30,6 +34,7 @@ export function FollowUpPanel({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
+  const [aberto, setAberto] = useState(false);
 
   const pendentes = useMemo(() => {
     return leads
@@ -97,102 +102,125 @@ export function FollowUpPanel({
     onConfirmado(data as Lead);
   }
 
-  if (pendentes.length === 0) {
-    return (
-      <div className="rounded-2xl border border-selo-700/10 bg-white px-5 py-5">
-        <h2 className="font-display text-base font-semibold text-selo-900">
-          Acompanhamento
-        </h2>
-        <p className="mt-2 text-sm text-ink/50">
-          Nenhum cliente precisando de contato agora — cadência em dia.
-        </p>
-      </div>
-    );
-  }
+  const temPendentes = pendentes.length > 0;
 
   return (
-    <div className="rounded-2xl border border-selo-700/10 bg-white px-5 py-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-base font-semibold text-selo-900">
-          Acompanhamento
-        </h2>
-        <span className="text-xs text-ink/45">
-          {pendentes.length} cliente{pendentes.length > 1 ? "s" : ""} precisando de contato
+    <div className="rounded-2xl border border-selo-700/10 bg-white">
+      <button
+        type="button"
+        onClick={() => setAberto((current) => !current)}
+        aria-expanded={aberto}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+      >
+        <span className="flex items-center gap-2">
+          <span className="font-display text-base font-semibold text-selo-900">
+            Acompanhamento
+          </span>
+          {temPendentes && (
+            <span className="rounded-full border border-ouro-500/40 bg-ouro-50 px-2 py-0.5 text-xs font-semibold text-ouro-600">
+              {pendentes.length}
+            </span>
+          )}
         </span>
-      </div>
+        <span className="flex items-center gap-1.5 text-sm font-medium text-selo-700">
+          {aberto ? "Recolher" : "Ver acompanhamento"}
+          {aberto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </span>
+      </button>
 
-      <ul className="mt-4 space-y-3">
-        {pendentes.map((lead) => {
-          const mensagem = mensagemSugerida(lead);
-          const whatsappLink = buildWhatsAppLink(lead.whatsapp, mensagem);
-          const vencida = Boolean(lead.data_proximo_contato);
-
-          return (
-            <li
-              key={lead.id}
-              className="rounded-xl border border-ouro-500/30 bg-ouro-50 px-4 py-4"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-selo-900">{lead.nome}</p>
-                  <StatusBadge status={lead.status} />
-                </div>
-                <p className="text-xs text-ink/50">
-                  {vencida
-                    ? `Contato previsto para ${formatDate(lead.data_proximo_contato)}`
-                    : "Sem contato agendado ainda"}
-                </p>
-              </div>
-
-              <p className="mt-2 rounded-lg border border-selo-700/10 bg-white px-3 py-2 text-sm text-ink/70">
-                {mensagem}
+      {aberto && (
+        <div className="border-t border-selo-700/10 px-5 pb-5 pt-4">
+          {!temPendentes ? (
+            <p className="text-sm text-ink/50">
+              Nenhum cliente precisando de contato agora — cadência em dia.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-ink/45">
+                {pendentes.length} cliente{pendentes.length > 1 ? "s" : ""} precisando de contato
               </p>
 
-              {errorId === lead.id && (
-                <p className="mt-2 text-xs text-red-600">
-                  Não foi possível confirmar o envio agora. Tente novamente.
-                </p>
-              )}
+              <ul className="mt-3 space-y-3">
+                {pendentes.map((lead) => {
+                  const mensagem = mensagemSugerida(lead);
+                  const whatsappLink = buildWhatsAppLink(lead.whatsapp, mensagem);
+                  const vencida = Boolean(lead.data_proximo_contato);
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleCopiar(lead, mensagem)}
-                  className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
-                >
-                  {copiedId === lead.id ? (
-                    <>
-                      <Check className="mr-1.5 h-4 w-4" /> Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-1.5 h-4 w-4" /> Copiar mensagem
-                    </>
-                  )}
-                </Button>
+                  return (
+                    <li
+                      key={lead.id}
+                      className="rounded-xl border border-ouro-500/30 bg-ouro-50 px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-selo-900">{lead.nome}</p>
+                          <StatusBadge status={lead.status} />
+                        </div>
+                        <p className="text-xs text-ink/50">
+                          {vencida
+                            ? `Contato previsto para ${formatDate(lead.data_proximo_contato)}`
+                            : "Sem contato agendado ainda"}
+                        </p>
+                      </div>
 
-                <Button asChild variant="outline" size="sm" className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5">
-                  <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="mr-1.5 h-4 w-4" /> Abrir WhatsApp
-                  </a>
-                </Button>
+                      <p className="mt-2 rounded-lg border border-selo-700/10 bg-white px-3 py-2 text-sm text-ink/70">
+                        {mensagem}
+                      </p>
 
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={sendingId === lead.id}
-                  onClick={() => handleConfirmarEnvio(lead, mensagem)}
-                  className="bg-selo-700 text-paper hover:bg-selo-600"
-                >
-                  {sendingId === lead.id ? "Confirmando..." : "Confirmar envio"}
-                </Button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                      {errorId === lead.id && (
+                        <p className="mt-2 text-xs text-red-600">
+                          Não foi possível confirmar o envio agora. Tente novamente.
+                        </p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopiar(lead, mensagem)}
+                          className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+                        >
+                          {copiedId === lead.id ? (
+                            <>
+                              <Check className="mr-1.5 h-4 w-4" /> Copiado
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="mr-1.5 h-4 w-4" /> Copiar mensagem
+                            </>
+                          )}
+                        </Button>
+
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+                        >
+                          <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                            <MessageCircle className="mr-1.5 h-4 w-4" /> Abrir WhatsApp
+                          </a>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={sendingId === lead.id}
+                          onClick={() => handleConfirmarEnvio(lead, mensagem)}
+                          className="bg-selo-700 text-paper hover:bg-selo-600"
+                        >
+                          {sendingId === lead.id ? "Confirmando..." : "Confirmar envio"}
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
