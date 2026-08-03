@@ -5,10 +5,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { GestorDashboard } from "@/pages/admin/GestorDashboard";
 import { SpecialistDashboard } from "@/pages/admin/SpecialistDashboard";
 
-// Roteador por perfil (TASK-007A): decide qual dashboard mostrar depois do
-// login, sem mudar a URL (/admin continua sendo o destino do login pros
-// dois perfis). Adicionar um perfil novo no futuro é só adicionar um case
-// aqui + o valor correspondente em `profiles.role` (sql/006).
+// Roteador por perfil (TASK-007A):
+// Decide qual dashboard mostrar depois do login.
+// A URL /admin continua sendo o destino para todos os perfis.
+// Novos perfis futuros podem ser adicionados aqui.
+
 export default function Admin() {
   const { profile, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -32,8 +33,13 @@ export default function Admin() {
         <p className="max-w-sm text-sm text-ink/60">
           Seu login funcionou, mas ainda não existe um perfil cadastrado para
           esta conta. Peça para um gestor cadastrar seu nome, e-mail e função
-          na tabela <code className="rounded bg-ink/5 px-1 py-0.5">profiles</code>.
+          na tabela{" "}
+          <code className="rounded bg-ink/5 px-1 py-0.5">
+            profiles
+          </code>
+          .
         </p>
+
         <Button
           variant="outline"
           onClick={handleSignOut}
