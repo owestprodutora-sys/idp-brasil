@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { MessageCircle, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,13 @@ import {
   STATUS_OPTIONS,
   origemLabel,
 } from "@/lib/crm-config";
+import { resolveDocumentoStatus } from "@/lib/documento-config";
 import { sincronizarChecklistDocumentos } from "@/lib/documento-checklist";
 import { formatDateTime, toDateInputValue } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { useAuth } from "@/hooks/useAuth";
+import type { Documento } from "@/types/documento";
 import type { Lead } from "@/types/lead";
 
 interface LeadDetailModalProps {
@@ -44,6 +46,37 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
   // FEATURE 004 — aviso quando a troca de serviço não pôde substituir o
   // checklist antigo porque já existiam documentos além de PENDENTE.
   const [avisoChecklist, setAvisoChecklist] = useState(false);
+  // FEATURE 004 — checklist documental do lead (somente leitura por
+  // enquanto; upload/validação entram nas Features 005-007).
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [isLoadingDocumentos, setIsLoadingDocumentos] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function carregarDocumentos() {
+      setIsLoadingDocumentos(true);
+      const { data, error } = await supabase
+        .from("documentos")
+        .select("*")
+        .eq("lead_id", lead.id)
+        .order("criado_em", { ascending: true });
+
+      if (!isActive) return;
+
+      if (error) {
+        console.error("[Supabase] Erro ao carregar documentos:", error);
+      } else {
+        setDocumentos((data ?? []) as Documento[]);
+      }
+      setIsLoadingDocumentos(false);
+    }
+
+    carregarDocumentos();
+    return () => {
+      isActive = false;
+    };
+  }, [lead.id]);
 
   const whatsappLink = buildWhatsAppLink(
     lead.whatsapp,
@@ -113,6 +146,7 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
           id: session?.user.id ?? null,
           nome: usuarioNome,
         });
+        setDocumentos(resultado.documentos);
         setAvisoChecklist(resultado.avisoTrocaComDocumentosAvancados);
       } catch (checklistError) {
         console.error("[Documentos] Erro ao sincronizar checklist:", checklistError);
@@ -282,6 +316,41 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
               ))}
             </select>
           </Field>
+        </div>
+
+        <div className="mt-6 space-y-3 border-t border-selo-700/10 pt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/45">
+            Documentos
+          </h3>
+
+          {isLoadingDocumentos ? (
+            <p className="text-sm text-ink/45">Carregando checklist...</p>
+          ) : documentos.length === 0 ? (
+            <p className="text-sm text-ink/45">
+              {servico === ""
+                ? "Defina um serviço acima e salve para gerar o checklist."
+                : "Nenhum documento neste checklist ainda."}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {documentos.map((documento) => {
+                const statusOption = resolveDocumentoStatus(documento.status);
+                return (
+                  <li
+                    key={documento.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-selo-700/10 px-3 py-2 text-sm"
+                  >
+                    <span className="text-selo-900">{documento.nome}</span>
+                    <span
+                      className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${statusOption.badgeClass}`}
+                    >
+                      {statusOption.emoji} {statusOption.label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
         {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
