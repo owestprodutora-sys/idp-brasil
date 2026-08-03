@@ -82,6 +82,39 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
   // em andamento (desabilita só aquele item, não o modal inteiro).
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // FEATURE 006 — preview em painel lateral (PDF/PNG/JPG). Bucket é
+  // privado, então cada abertura pede uma signed URL nova.
+  const [previewDocumento, setPreviewDocumento] = useState<Documento | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewDocumento?.storage_path) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    let isActive = true;
+    setPreviewUrl(null);
+    setPreviewError(null);
+
+    supabase.storage
+      .from("documentos-clientes")
+      .createSignedUrl(previewDocumento.storage_path, 300)
+      .then(({ data, error }) => {
+        if (!isActive) return;
+        if (error || !data) {
+          console.error("[Storage] Erro ao gerar preview:", error);
+          setPreviewError("Não foi possível abrir o preview deste documento.");
+          return;
+        }
+        setPreviewUrl(data.signedUrl);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [previewDocumento]);
 
   async function handleUpload(documento: Documento, file: File) {
     setUploadingId(documento.id);
@@ -403,7 +436,17 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
                     className="flex items-center justify-between gap-3 rounded-lg border border-selo-700/10 px-3 py-2 text-sm"
                   >
                     <div className="min-w-0">
-                      <span className="block truncate text-selo-900">{documento.nome}</span>
+                      {documento.storage_path ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewDocumento(documento)}
+                          className="block truncate text-left text-selo-900 underline-offset-2 hover:underline"
+                        >
+                          {documento.nome}
+                        </button>
+                      ) : (
+                        <span className="block truncate text-selo-900">{documento.nome}</span>
+                      )}
                       {documento.arquivo_nome_original && (
                         <span className="block truncate text-xs text-ink/45">
                           {documento.arquivo_nome_original}
@@ -471,6 +514,37 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
           </Button>
         </div>
       </div>
+
+      {previewDocumento && (
+        <div className="fixed inset-0 z-[60] flex justify-end bg-selo-900/40">
+          <div className="flex h-full w-full flex-col bg-white shadow-xl sm:w-[420px]">
+            <div className="flex items-center justify-between border-b border-selo-700/10 p-4">
+              <span className="truncate text-sm font-medium text-selo-900">
+                {previewDocumento.nome}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewDocumento(null)}
+                aria-label="Fechar preview"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/50 hover:bg-selo-50 hover:text-selo-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto bg-selo-900/5 p-2">
+              {previewError ? (
+                <p className="p-4 text-sm text-red-600">{previewError}</p>
+              ) : !previewUrl ? (
+                <p className="p-4 text-sm text-ink/45">Carregando...</p>
+              ) : previewDocumento.mime_type === "application/pdf" ? (
+                <iframe src={previewUrl} title={previewDocumento.nome} className="h-full w-full" />
+              ) : (
+                <img src={previewUrl} alt={previewDocumento.nome} className="w-full" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
