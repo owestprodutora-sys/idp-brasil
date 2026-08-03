@@ -6,6 +6,9 @@ export interface LeadFiltersValue {
   status: string;
   prioridade: string;
   data: DateFilter;
+  // Ligado pelos cards clicáveis do dashboard (não tem controle próprio
+  // no menu de filtros — ver DashboardCards).
+  semContatoRecente: boolean;
 }
 
 export function LeadFilters({

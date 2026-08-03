@@ -229,6 +229,32 @@ export function isProximaAcaoVencida(dataProximoContato: string | null | undefin
   return data.getTime() < hoje.getTime();
 }
 
+// MVP 1.1 — Fase 2 (FEATURE 003, cadência). Sem datas fixas, sem regra de
+// feriado/fim de semana — a contagem sempre recomeça do último contato
+// confirmado: proximo_contato = ultimo_contato_confirmado + intervalo_dias.
+export const DEFAULT_FOLLOWUP_INTERVALO_DIAS = 7;
+
+export function calcularProximoContato(
+  ultimoContatoConfirmado: string,
+  intervaloDias: number = DEFAULT_FOLLOWUP_INTERVALO_DIAS,
+): string {
+  const data = new Date(`${ultimoContatoConfirmado.slice(0, 10)}T00:00:00`);
+  data.setDate(data.getDate() + intervaloDias);
+  return data.toISOString().slice(0, 10);
+}
+
+// MVP 1.1 — Fase 2 (FEATURE 002). Um lead "precisa de acompanhamento"
+// quando o caso ainda está em aberto e não tem próximo contato agendado,
+// ou a data agendada já passou. Não considera leads FINALIZADO.
+export function precisaDeAcompanhamento(
+  status: string,
+  dataProximoContato: string | null | undefined,
+): boolean {
+  if (CLOSED_STATUSES.includes(resolveStatus(status).value)) return false;
+  if (!dataProximoContato) return true;
+  return isProximaAcaoVencida(dataProximoContato);
+}
+
 // TASK-007B — Preparação para múltiplos profissionais. A tabela já tem a
 // coluna `profissional_id` (sql/007), mas hoje ela sempre vem nula, porque
 // só existe a Adrieli. Enquanto não há gerenciamento de profissionais,

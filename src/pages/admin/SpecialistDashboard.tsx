@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { DashboardCards } from "@/components/admin/DashboardCards";
+import { FollowUpPanel } from "@/components/admin/FollowUpPanel";
 import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
 import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilters";
 import { LeadsTable } from "@/components/admin/LeadsTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useLeads } from "@/hooks/useLeads";
-import { isProximaAcaoVencida } from "@/lib/crm-config";
+import { isProximaAcaoVencida, isSemContatoRecente, type LeadStatus } from "@/lib/crm-config";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Lead } from "@/types/lead";
 
@@ -16,6 +17,7 @@ const DEFAULT_FILTERS: LeadFiltersValue = {
   status: "todos",
   prioridade: "todas",
   data: "todos",
+  semContatoRecente: false,
 };
 
 // Painel operacional da Especialista (ex-TASK-008/TASK-007). O conteúdo é o
@@ -38,6 +40,22 @@ export function SpecialistDashboard() {
     setSelectedLead(updated);
   }
 
+  // Cards clicáveis do dashboard: clicar de novo no card ativo remove o
+  // filtro (comportamento de toggle), sem precisar abrir o menu de filtros.
+  function handleSelectStatusFromCard(status: LeadStatus) {
+    setFilters((current) => ({
+      ...current,
+      status: current.status === status ? "todos" : status,
+    }));
+  }
+
+  function handleToggleSemContatoRecenteFromCard() {
+    setFilters((current) => ({
+      ...current,
+      semContatoRecente: !current.semContatoRecente,
+    }));
+  }
+
   const visibleLeads = useMemo(() => {
     const now = Date.now();
     const filtered = leads.filter((lead) => {
@@ -50,6 +68,9 @@ export function SpecialistDashboard() {
         const diasLimite = filters.data === "hoje" ? 1 : filters.data === "7dias" ? 7 : 30;
         const limite = now - diasLimite * 24 * 60 * 60 * 1000;
         if (createdAt < limite) return false;
+      }
+      if (filters.semContatoRecente && !isSemContatoRecente(lead.status, lead.ultimo_contato)) {
+        return false;
       }
       return true;
     });
@@ -99,7 +120,15 @@ export function SpecialistDashboard() {
 
           {isSupabaseConfigured && !isLoading && !errorMessage && leads.length > 0 && (
             <>
-              <DashboardCards leads={leads} />
+              <FollowUpPanel leads={leads} onConfirmado={handleLeadUpdated} />
+
+              <DashboardCards
+                leads={leads}
+                activeStatus={filters.status}
+                semContatoRecenteAtivo={filters.semContatoRecente}
+                onSelectStatus={handleSelectStatusFromCard}
+                onToggleSemContatoRecente={handleToggleSemContatoRecenteFromCard}
+              />
 
               <LeadFilters value={filters} onChange={setFilters} />
 

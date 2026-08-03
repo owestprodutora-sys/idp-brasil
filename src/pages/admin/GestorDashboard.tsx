@@ -17,6 +17,7 @@ const DEFAULT_FILTERS: LeadFiltersValue = {
   status: "todos",
   prioridade: "todas",
   data: "todos",
+  semContatoRecente: false,
 };
 
 // Dashboard do Gestor (TASK-007A / TASK-007B) — visão geral da operação,
@@ -34,7 +35,13 @@ export function GestorDashboard() {
     navigate("/login", { replace: true });
   }
 
-  const convertidos = leads.filter((lead) => lead.status === "elegivel").length;
+  // MVP 1.1 — "convertido" passou a ser FINALIZADO com desfecho de sucesso
+  // (mesmo critério usado em GestorMetricsCards). Antes da migração da
+  // Fase 1 esse filtro usava o status legado "elegivel", que não existe
+  // mais no pipeline novo — corrigido aqui pra não zerar o Financeiro.
+  const convertidos = leads.filter(
+    (lead) => lead.status === "FINALIZADO" && lead.motivo_finalizacao === "CONTRATADO_CONCLUIDO",
+  ).length;
 
   const leadsFiltrados = useMemo(() => {
     const now = Date.now();
