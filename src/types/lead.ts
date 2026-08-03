@@ -13,6 +13,9 @@ export interface Lead {
   status: string;
   // Campos de CRM operacional (TASK-007)
   prioridade: string | null;
+  // Preparação para múltiplos profissionais (TASK-007B) — hoje sempre nulo,
+  // já que só existe a Adrieli. Ver lib/crm-config.ts#responsavelLabel.
+  profissional_id: string | null;
   observacoes: string | null;
   ultimo_contato: string | null;
   proxima_acao: string | null;

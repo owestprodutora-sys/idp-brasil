@@ -159,3 +159,31 @@ export function isProximaAcaoVencida(dataProximoContato: string | null | undefin
   const data = new Date(`${dataProximoContato}T00:00:00`);
   return data.getTime() < hoje.getTime();
 }
+
+// TASK-007B — Preparação para múltiplos profissionais. A tabela já tem a
+// coluna `profissional_id` (sql/007), mas hoje ela sempre vem nula, porque
+// só existe a Adrieli. Enquanto não há gerenciamento de profissionais,
+// mostramos o nome dela fixo — sem precisar buscar em `profiles` (que hoje
+// só permite a cada usuário ler o próprio perfil).
+const RESPONSAVEL_UNICO_NOME = "Adrieli Drewlo Dias";
+
+export function responsavelLabel(): string {
+  return RESPONSAVEL_UNICO_NOME;
+}
+
+// Um lead "aguardando documento" que não teve contato recente é um gargalo
+// visível pro gestor (cliente pode ter esquecido de enviar, ou a
+// especialista pode ter esquecido de cobrar).
+const DIAS_AGUARDANDO_DOCUMENTO_ATRASADO = 5;
+
+export function isAguardandoDocumentoAtrasado(
+  status: string,
+  ultimoContato: string | null | undefined,
+  createdAt: string,
+): boolean {
+  if (resolveStatus(status).value !== "aguardando_documento") return false;
+
+  const referencia = ultimoContato ?? createdAt;
+  const dias = (Date.now() - new Date(referencia).getTime()) / (1000 * 60 * 60 * 24);
+  return dias > DIAS_AGUARDANDO_DOCUMENTO_ATRASADO;
+}
