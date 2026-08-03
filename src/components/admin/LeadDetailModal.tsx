@@ -12,9 +12,11 @@ import {
   STATUS_OPTIONS,
   origemLabel,
 } from "@/lib/crm-config";
+import { sincronizarChecklistDocumentos } from "@/lib/documento-checklist";
 import { formatDateTime, toDateInputValue } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { useAuth } from "@/hooks/useAuth";
 import type { Lead } from "@/types/lead";
 
 interface LeadDetailModalProps {
@@ -24,6 +26,7 @@ interface LeadDetailModalProps {
 }
 
 export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalProps) {
+  const { profile, session } = useAuth();
   const [status, setStatus] = useState(lead.status);
   const [servico, setServico] = useState(lead.servico ?? "");
   const [prioridade, setPrioridade] = useState(lead.prioridade ?? "normal");
@@ -38,6 +41,9 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedJustNow, setSavedJustNow] = useState(false);
+  // FEATURE 004 — aviso quando a troca de serviço não pôde substituir o
+  // checklist antigo porque já existiam documentos além de PENDENTE.
+  const [avisoChecklist, setAvisoChecklist] = useState(false);
 
   const whatsappLink = buildWhatsAppLink(
     lead.whatsapp,
@@ -59,10 +65,14 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     setIsSaving(true);
     setErrorMessage(null);
     setSavedJustNow(false);
+    setAvisoChecklist(false);
+
+    const servicoAnterior = lead.servico ?? null;
+    const novoServico = servico === "" ? null : servico;
 
     const updates = {
       status,
-      servico: servico === "" ? null : servico,
+      servico: novoServico,
       prioridade,
       observacoes: observacoes.trim() === "" ? null : observacoes.trim(),
       ultimo_contato: ultimoContato === "" ? null : ultimoContato,
@@ -91,6 +101,26 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
 
     onUpdated(data as Lead);
     setSavedJustNow(true);
+
+    // FEATURE 004 — o checklist documental é gerado/atualizado sempre que
+    // o serviço do lead é definido ou trocado. Só dispara quando o valor
+    // realmente mudou (a própria função também tem esse early return, mas
+    // evitamos a chamada de rede à toa).
+    if (novoServico !== servicoAnterior) {
+      try {
+        const usuarioNome = profile?.nome ?? session?.user.email ?? "Equipe";
+        const resultado = await sincronizarChecklistDocumentos(lead.id, novoServico, servicoAnterior, {
+          id: session?.user.id ?? null,
+          nome: usuarioNome,
+        });
+        setAvisoChecklist(resultado.avisoTrocaComDocumentosAvancados);
+      } catch (checklistError) {
+        console.error("[Documentos] Erro ao sincronizar checklist:", checklistError);
+        setErrorMessage(
+          "Lead salvo, mas não foi possível atualizar o checklist de documentos. Tente reabrir o lead.",
+        );
+      }
+    }
   }
 
   return (
@@ -257,6 +287,12 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
         {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
         {savedJustNow && !hasChanges && (
           <p className="mt-4 text-sm text-selo-700">Alterações salvas.</p>
+        )}
+        {avisoChecklist && (
+          <p className="mt-4 rounded-lg border border-ouro-500/40 bg-ouro-50 p-3 text-sm text-ouro-600">
+            O serviço mudou, mas este lead já tem documentos além de pendente. O checklist
+            anterior foi preservado — nenhum documento foi removido.
+          </p>
         )}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">

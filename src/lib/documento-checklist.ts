@@ -31,10 +31,21 @@ export interface SincronizarChecklistResult {
 //      permanece como está, preservando o histórico. `avisoTrocaComDocumentosAvancados`
 //      volta `true` pra a tela avisar a especialista — a regra pode
 //      evoluir depois, mas por ora só evita perda de dado.
+
+// Quem disparou a sincronização — usado só pra registrar em
+// documento_historico (Feature 008), mesmo padrão pragmático já usado em
+// follow_up_logs: guarda o nome no momento da ação, sem depender de join
+// com profiles pra exibir a timeline depois.
+export interface UsuarioAcao {
+  id: string | null;
+  nome: string;
+}
+
 export async function sincronizarChecklistDocumentos(
   leadId: string,
   novoServico: string | null,
   servicoAnterior: string | null,
+  usuario: UsuarioAcao,
 ): Promise<SincronizarChecklistResult> {
   // Serviço salvo sem mudança — não mexe em nada (regra 1).
   if (novoServico === servicoAnterior) {
@@ -78,17 +89,40 @@ export async function sincronizarChecklistDocumentos(
   const faltantes = checklist.filter((item) => !tiposExistentes.has(item.tipo));
 
   if (faltantes.length > 0) {
-    const { error: insertError } = await supabase.from("documentos").insert(
-      faltantes.map((item) => ({
-        lead_id: leadId,
-        tipo: item.tipo,
-        nome: item.nome,
-        status: "PENDENTE",
-      })),
-    );
+    const { data: inseridosData, error: insertError } = await supabase
+      .from("documentos")
+      .insert(
+        faltantes.map((item) => ({
+          lead_id: leadId,
+          tipo: item.tipo,
+          nome: item.nome,
+          status: "PENDENTE",
+        })),
+      )
+      .select();
 
     if (insertError) {
       throw new Error(`Não foi possível gerar o checklist: ${insertError.message}`);
+    }
+
+    // Feature 008 — um registro de CHECKLIST_GERADO por item novo. Não
+    // bloqueia a geração do checklist se o log falhar (o checklist em si
+    // já foi criado com sucesso acima); só avisa no console.
+    const inseridos = (inseridosData ?? []) as Documento[];
+    if (inseridos.length > 0) {
+      const { error: historicoError } = await supabase.from("documento_historico").insert(
+        inseridos.map((documento) => ({
+          documento_id: documento.id,
+          lead_id: leadId,
+          acao: "CHECKLIST_GERADO",
+          usuario_id: usuario.id,
+          usuario_nome: usuario.nome,
+        })),
+      );
+
+      if (historicoError) {
+        console.error("[Supabase] Erro ao registrar histórico do checklist:", historicoError);
+      }
     }
   }
 
