@@ -14,14 +14,5 @@ export function documentLabel(value: TriState): string {
   return "—";
 }
 
-const STATUS_DETAIL_LABELS: Record<string, string> = {
-  novo: "🟡 Aguardando análise da especialista",
-  em_analise: "🔵 Em análise",
-  contatado: "🟣 Contatado",
-  convertido: "🟢 Convertido",
-  perdido: "⚪ Perdido",
-};
-
-export function statusDetailLabel(status: string): string {
-  return STATUS_DETAIL_LABELS[status] ?? status;
-}
+// A label detalhada de status agora vem de @/lib/crm-config (resolveStatus),
+// que também alimenta o StatusBadge e o seletor editável do modal.

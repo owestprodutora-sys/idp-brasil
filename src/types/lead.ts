@@ -11,5 +11,12 @@ export interface Lead {
   laudo: string | null;
   lgpd_aceito: boolean;
   status: string;
+  // Campos de CRM operacional (TASK-007)
+  prioridade: string | null;
+  observacoes: string | null;
+  ultimo_contato: string | null;
+  proxima_acao: string | null;
+  data_proximo_contato: string | null;
+  motivo_encerramento: string | null;
   created_at: string;
 }
