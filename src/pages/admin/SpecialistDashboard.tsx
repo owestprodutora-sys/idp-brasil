@@ -1,8 +1,10 @@
+import { ArrowLeft, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AgendaPlaceholder } from "@/components/admin/AgendaPlaceholder";
+import { Button } from "@/components/ui/button";
 import { CasosCriticos } from "@/components/admin/CasosCriticos";
 import { DashboardCards } from "@/components/admin/DashboardCards";
 import { FilaDeTrabalho } from "@/components/admin/FilaDeTrabalho";
@@ -46,6 +48,11 @@ export function SpecialistDashboard() {
   // de todos os leads + eventos de finalização de hoje) que o useLeads não
   // traz — ver hooks/useMeuDiaData.ts.
   const meuDia = useMeuDiaData();
+  // FASE 5A.1 (ajuste de UX) — mesmo padrão de navegação do
+  // GestorDashboard#view: o financeiro fica oculto por padrão, atrás de um
+  // botão "Ver Financeiro" / "Voltar ao CRM", em vez de aparecer direto no
+  // corpo do painel.
+  const [view, setView] = useState<"crm" | "financeiro">("crm");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filters, setFilters] = useState<LeadFiltersValue>(DEFAULT_FILTERS);
   // Filtro extra aplicado pelos cards do Meu Dia que não têm equivalente
@@ -186,8 +193,22 @@ export function SpecialistDashboard() {
             <p className="text-sm text-ink/60">Nenhum lead recebido ainda.</p>
           )}
 
-          {isSupabaseConfigured && !isLoading && !errorMessage && leads.length > 0 && (
+          {isSupabaseConfigured && !isLoading && !errorMessage && leads.length > 0 && view === "crm" && (
             <>
+              {/* FASE 5A.1 (ajuste de UX) — mesmo botão "Ver Financeiro" do
+                  GestorDashboard, na mesma posição relativa (topo do
+                  conteúdo do painel). */}
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => setView("financeiro")}
+                  variant="outline"
+                  className="h-11 border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Ver Financeiro
+                </Button>
+              </div>
+
               {/* FASE 4B — Dashboard Operacional "Meu Dia". Ordem sugerida
                   pelo spec: Meu Dia → Próximas tarefas → Casos críticos →
                   Indicadores → Agenda, todos acima do CRM operacional que
@@ -222,23 +243,6 @@ export function SpecialistDashboard() {
                     followUpsVencidos={meuDiaResumo.followUpsVencidos}
                   />
 
-                  {/* FASE 5A.1 — Painel Financeiro da Especialista (FEATURE
-                      022/028). Bloco independente, com seu próprio
-                      carregamento (useFinanceiro) — não interfere no fluxo
-                      de leads acima. */}
-                  {financeiro.errorMessage && (
-                    <p className="text-sm text-red-600">{financeiro.errorMessage}</p>
-                  )}
-                  {!financeiro.isLoading && !financeiro.errorMessage && (
-                    <div className="space-y-3">
-                      <h2 className="font-display text-base font-semibold text-selo-900">
-                        Financeiro
-                      </h2>
-                      <SpecialistFinanceiroCards registros={financeiro.registros} />
-                      <SpecialistIndicadoresComissao registros={financeiro.registros} />
-                    </div>
-                  )}
-
                   <AgendaPlaceholder />
                 </>
               )}
@@ -267,6 +271,34 @@ export function SpecialistDashboard() {
                 </p>
               ) : (
                 <LeadsTable leads={visibleLeads} onView={setSelectedLead} />
+              )}
+            </>
+          )}
+
+          {isSupabaseConfigured && !isLoading && !errorMessage && view === "financeiro" && (
+            <>
+              {/* FASE 5A.1 (ajuste de UX) — mesmo botão "Voltar" do
+                  GestorDashboard#view === "financeiro". */}
+              <Button
+                variant="outline"
+                onClick={() => setView("crm")}
+                className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar ao CRM
+              </Button>
+
+              {financeiro.errorMessage && (
+                <p className="text-sm text-red-600">{financeiro.errorMessage}</p>
+              )}
+
+              {financeiro.isLoading ? (
+                <p className="text-sm text-ink/60">Carregando dados financeiros...</p>
+              ) : (
+                <>
+                  <SpecialistFinanceiroCards registros={financeiro.registros} />
+                  <SpecialistIndicadoresComissao registros={financeiro.registros} />
+                </>
               )}
             </>
           )}
