@@ -2,15 +2,23 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AgendaPlaceholder } from "@/components/admin/AgendaPlaceholder";
+import { CasosCriticos } from "@/components/admin/CasosCriticos";
 import { DashboardCards } from "@/components/admin/DashboardCards";
+import { FilaDeTrabalho } from "@/components/admin/FilaDeTrabalho";
 import { FollowUpPanel } from "@/components/admin/FollowUpPanel";
+import { IndicadoresOperacionais } from "@/components/admin/IndicadoresOperacionais";
 import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
 import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilters";
 import { LeadsTable } from "@/components/admin/LeadsTable";
+import { MeuDiaPanel, type MeuDiaCardKey } from "@/components/admin/MeuDiaPanel";
 import { StatusTabs } from "@/components/admin/StatusTabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useLeads } from "@/hooks/useLeads";
-import { isProximaAcaoVencida, isSemContatoRecente, type LeadStatus } from "@/lib/crm-config";
+import { useMeuDiaData } from "@/hooks/useMeuDiaData";
+import { CLOSED_STATUSES, isProximaAcaoVencida, isSemContatoRecente, type LeadStatus } from "@/lib/crm-config";
+import { listarAlertasDoLead } from "@/lib/lead-alertas";
+import { agruparDocumentosPorLead, buildMeuDiaResumo } from "@/lib/meu-dia";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Lead } from "@/types/lead";
 
@@ -28,8 +36,19 @@ export function SpecialistDashboard() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { leads, isLoading, errorMessage, updateLead } = useLeads();
+  // FASE 4B — Dashboard Operacional "Meu Dia". Dados adicionais (documentos
+  // de todos os leads + eventos de finalização de hoje) que o useLeads não
+  // traz — ver hooks/useMeuDiaData.ts.
+  const meuDia = useMeuDiaData();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filters, setFilters] = useState<LeadFiltersValue>(DEFAULT_FILTERS);
+  // Filtro extra aplicado pelos cards do Meu Dia que não têm equivalente
+  // em LeadFiltersValue (esses continuam sendo controlados por `filters`,
+  // reaproveitando handleSelectStatusFromCard — ver "novosLeads" abaixo).
+  const [meuDiaExtraFilter, setMeuDiaExtraFilter] = useState<Exclude<
+    MeuDiaCardKey,
+    "novosLeads"
+  > | null>(null);
 
   async function handleSignOut() {
     await signOut();
@@ -57,6 +76,31 @@ export function SpecialistDashboard() {
     }));
   }
 
+  // FEATURE 013 — cards do Meu Dia aplicam o filtro correspondente na
+  // lista de leads. "Novos leads" reaproveita o mesmo toggle de status já
+  // usado pelo card equivalente em DashboardCards (mesmo estado, mesmo
+  // comportamento); os demais usam o filtro extra abaixo.
+  function handleToggleMeuDiaCard(key: MeuDiaCardKey) {
+    if (key === "novosLeads") {
+      handleSelectStatusFromCard("NOVO_LEAD");
+      return;
+    }
+    setMeuDiaExtraFilter((current) => (current === key ? null : key));
+  }
+
+  const meuDiaActiveCard: MeuDiaCardKey | null =
+    filters.status === "NOVO_LEAD" ? "novosLeads" : meuDiaExtraFilter;
+
+  const documentosPorLead = useMemo(
+    () => agruparDocumentosPorLead(meuDia.documentos),
+    [meuDia.documentos],
+  );
+
+  const meuDiaResumo = useMemo(
+    () => buildMeuDiaResumo(leads, meuDia.documentos, meuDia.leadIdsFinalizadosHoje),
+    [leads, meuDia.documentos, meuDia.leadIdsFinalizadosHoje],
+  );
+
   const visibleLeads = useMemo(() => {
     const now = Date.now();
     const filtered = leads.filter((lead) => {
@@ -72,6 +116,23 @@ export function SpecialistDashboard() {
       }
       if (filters.semContatoRecente && !isSemContatoRecente(lead.status, lead.ultimo_contato)) {
         return false;
+      }
+      if (meuDiaExtraFilter) {
+        const documentosDoLead = documentosPorLead.get(lead.id) ?? [];
+        if (meuDiaExtraFilter === "followUpsVencidos") {
+          const encerrado = CLOSED_STATUSES.includes(
+            lead.status as (typeof CLOSED_STATUSES)[number],
+          );
+          if (encerrado || !isProximaAcaoVencida(lead.data_proximo_contato)) return false;
+        } else if (meuDiaExtraFilter === "documentosAguardandoValidacao") {
+          if (!documentosDoLead.some((d) => d.status === "RECEBIDO")) return false;
+        } else if (meuDiaExtraFilter === "documentosInvalidos") {
+          if (!documentosDoLead.some((d) => d.status === "INVALIDO")) return false;
+        } else if (meuDiaExtraFilter === "casosCriticos") {
+          if (listarAlertasDoLead(lead, documentosDoLead).length === 0) return false;
+        } else if (meuDiaExtraFilter === "finalizadosHoje") {
+          if (!meuDia.leadIdsFinalizadosHoje.has(lead.id)) return false;
+        }
       }
       return true;
     });
@@ -92,7 +153,7 @@ export function SpecialistDashboard() {
 
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [leads, filters]);
+  }, [leads, filters, meuDiaExtraFilter, documentosPorLead, meuDia.leadIdsFinalizadosHoje]);
 
   return (
     <div className="min-h-screen bg-paper px-6 py-10">
@@ -121,6 +182,44 @@ export function SpecialistDashboard() {
 
           {isSupabaseConfigured && !isLoading && !errorMessage && leads.length > 0 && (
             <>
+              {/* FASE 4B — Dashboard Operacional "Meu Dia". Ordem sugerida
+                  pelo spec: Meu Dia → Próximas tarefas → Casos críticos →
+                  Indicadores → Agenda, todos acima do CRM operacional que
+                  já existia (cards, follow-up, abas, tabela). */}
+              {meuDia.errorMessage && (
+                <p className="text-sm text-red-600">{meuDia.errorMessage}</p>
+              )}
+
+              {!meuDia.isLoading && !meuDia.errorMessage && (
+                <>
+                  <MeuDiaPanel
+                    resumo={meuDiaResumo}
+                    activeCard={meuDiaActiveCard}
+                    onToggleCard={handleToggleMeuDiaCard}
+                  />
+
+                  <FilaDeTrabalho
+                    leads={leads}
+                    documentosPorLead={documentosPorLead}
+                    onOpenLead={setSelectedLead}
+                  />
+
+                  <CasosCriticos
+                    leads={leads}
+                    documentosPorLead={documentosPorLead}
+                    onOpenLead={setSelectedLead}
+                  />
+
+                  <IndicadoresOperacionais
+                    leads={leads}
+                    documentos={meuDia.documentos}
+                    followUpsVencidos={meuDiaResumo.followUpsVencidos}
+                  />
+
+                  <AgendaPlaceholder />
+                </>
+              )}
+
               <DashboardCards
                 leads={leads}
                 activeStatus={filters.status}
