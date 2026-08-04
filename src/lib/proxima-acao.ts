@@ -2,7 +2,7 @@
 // sem IA, sem chamada externa. Recebe o lead (+ checklist já carregado) e
 // devolve a próxima ação recomendada pra especialista.
 
-import { precisaDeAcompanhamento, resolveStatus } from "@/lib/crm-config";
+import { documentoPrecisaReenvio, precisaDeAcompanhamento, resolveStatus } from "@/lib/crm-config";
 import type { Documento } from "@/types/documento";
 import type { Lead } from "@/types/lead";
 
@@ -44,9 +44,7 @@ export function determinarProximaAcao(lead: Lead, documentos: Documento[]): Prox
     };
   }
 
-  const documentoParaReenviar = documentos.find(
-    (d) => d.status === "INVALIDO" || d.status === "SOLICITAR_NOVO",
-  );
+  const documentoParaReenviar = documentos.find(documentoPrecisaReenvio);
   if (documentoParaReenviar) {
     return {
       titulo: "Solicitar novo documento",

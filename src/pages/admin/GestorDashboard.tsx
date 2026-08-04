@@ -12,6 +12,7 @@ import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilte
 import { StatusTabs } from "@/components/admin/StatusTabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useLeads } from "@/hooks/useLeads";
+import { isLeadConvertido } from "@/lib/crm-config";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 const DEFAULT_FILTERS: LeadFiltersValue = {
@@ -36,13 +37,10 @@ export function GestorDashboard() {
     navigate("/login", { replace: true });
   }
 
-  // MVP 1.1 — "convertido" passou a ser FINALIZADO com desfecho de sucesso
-  // (mesmo critério usado em GestorMetricsCards). Antes da migração da
-  // Fase 1 esse filtro usava o status legado "elegivel", que não existe
-  // mais no pipeline novo — corrigido aqui pra não zerar o Financeiro.
-  const convertidos = leads.filter(
-    (lead) => lead.status === "FINALIZADO" && lead.motivo_finalizacao === "CONTRATADO_CONCLUIDO",
-  ).length;
+  // MVP 1.1 — "convertido" passou a ser FINALIZADO com desfecho de sucesso.
+  // Critério centralizado em lib/crm-config.ts#isLeadConvertido (FASE 4 —
+  // antes vivia duplicado aqui e em GestorMetricsCards).
+  const convertidos = leads.filter(isLeadConvertido).length;
 
   const leadsFiltrados = useMemo(() => {
     const now = Date.now();

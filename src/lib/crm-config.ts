@@ -2,6 +2,9 @@
 // Fonte única de verdade para status, prioridade e motivo de encerramento,
 // usada pelo badge, pelos filtros, pelos cards e pelo modal de detalhes.
 
+import type { Documento } from "@/types/documento";
+import type { Lead } from "@/types/lead";
+
 // MVP 1.1 — Fase 1: pipeline operacional linear (sql/008).
 // Substitui o conjunto de status do TASK-007. FINALIZADO é o único status
 // final — o desfecho fica em `motivo_finalizacao`, não em status separados
@@ -281,4 +284,24 @@ export function isAguardandoDocumentoAtrasado(
   const referencia = ultimoContato ?? createdAt;
   const dias = (Date.now() - new Date(referencia).getTime()) / (1000 * 60 * 60 * 24);
   return dias > DIAS_AGUARDANDO_DOCUMENTO_ATRASADO;
+}
+
+// FASE 4 — Auditoria de arquitetura. Antes vivia duplicado, com o mesmo
+// predicado, em lib/proxima-acao.ts e lib/lead-alertas.ts. Nenhuma mudança
+// de comportamento: só centraliza a regra num único lugar.
+export function documentoPrecisaReenvio(documento: Documento): boolean {
+  return documento.status === "INVALIDO" || documento.status === "SOLICITAR_NOVO";
+}
+
+// FASE 4 — Auditoria de arquitetura. Antes o critério de "convertido" /
+// "não elegível" (FINALIZADO + motivo_finalizacao específico) estava
+// duplicado entre GestorDashboard.tsx e GestorMetricsCards.tsx — o próprio
+// comentário em GestorDashboard já apontava a duplicação. Nenhuma mudança
+// de comportamento: só centraliza a regra.
+export function isLeadConvertido(lead: Lead): boolean {
+  return lead.status === "FINALIZADO" && lead.motivo_finalizacao === "CONTRATADO_CONCLUIDO";
+}
+
+export function isLeadNaoElegivel(lead: Lead): boolean {
+  return lead.status === "FINALIZADO" && lead.motivo_finalizacao === "NAO_ELEGIVEL";
 }

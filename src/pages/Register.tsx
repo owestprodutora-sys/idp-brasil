@@ -69,6 +69,13 @@ export default function Register() {
       // Explícito porque o default da coluna no banco já ficou
       // desatualizado uma vez (ver sql/011) — não depender só dele.
       status: "NOVO_LEAD",
+      // Esta página de cadastro fala inteiramente sobre Isenção de IR, então
+      // todo lead que entra por aqui já nasce com esse serviço definido.
+      // Quando existirem páginas específicas para outros serviços (INSS
+      // acima do teto, IPVA PCD), cada uma virá com seu próprio valor aqui —
+      // as opções já existem em SERVICO_OPTIONS (lib/crm-config.ts) e
+      // continuam disponíveis para troca manual pela especialista.
+      servico: "isencao_ir",
     });
 
     setIsSubmitting(false);

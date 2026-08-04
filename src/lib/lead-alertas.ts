@@ -1,4 +1,4 @@
-import { isProximaAcaoVencida, isSemContatoRecente } from "@/lib/crm-config";
+import { documentoPrecisaReenvio, isProximaAcaoVencida, isSemContatoRecente } from "@/lib/crm-config";
 import type { Documento } from "@/types/documento";
 import type { Lead } from "@/types/lead";
 
@@ -15,9 +15,7 @@ export interface LeadAlerta {
 export function listarAlertasDoLead(lead: Lead, documentos: Documento[]): LeadAlerta[] {
   const alertas: LeadAlerta[] = [];
 
-  const documentoInvalido = documentos.find(
-    (d) => d.status === "INVALIDO" || d.status === "SOLICITAR_NOVO",
-  );
+  const documentoInvalido = documentos.find(documentoPrecisaReenvio);
   if (documentoInvalido) {
     alertas.push({ icone: "🔴", texto: `Documento inválido: ${documentoInvalido.nome}` });
   }

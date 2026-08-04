@@ -1,3 +1,4 @@
+import { isLeadConvertido, isLeadNaoElegivel } from "@/lib/crm-config";
 import type { Lead } from "@/types/lead";
 
 // MVP 1.1 — "Em atendimento" agrupa tudo que já saiu de NOVO_LEAD mas não
@@ -20,12 +21,8 @@ export function GestorMetricsCards({ leads }: { leads: Lead[] }) {
   const aguardandoDocumento = leads.filter(
     (lead) => lead.status === "DOCUMENTOS_SOLICITADOS",
   ).length;
-  const convertidos = leads.filter(
-    (lead) => lead.status === "FINALIZADO" && lead.motivo_finalizacao === "CONTRATADO_CONCLUIDO",
-  ).length;
-  const naoElegiveis = leads.filter(
-    (lead) => lead.status === "FINALIZADO" && lead.motivo_finalizacao === "NAO_ELEGIVEL",
-  ).length;
+  const convertidos = leads.filter(isLeadConvertido).length;
+  const naoElegiveis = leads.filter(isLeadNaoElegivel).length;
   const taxaConversao = total > 0 ? `${((convertidos / total) * 100).toFixed(1)}%` : "—";
 
   const cards = [
