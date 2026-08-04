@@ -1,3 +1,4 @@
+import { resolveStatusComissao } from "@/lib/comissao";
 import { formatCurrency, resolveStatusFinanceiro, statusFinanceiroOrdem } from "@/lib/financeiro";
 import { formatDate } from "@/lib/format";
 import { servicoLabel } from "@/lib/crm-config";
@@ -41,12 +42,14 @@ export function FinanceiroTable({ leads, registros, onOpenLead }: FinanceiroTabl
             <th className="px-5 py-3 font-medium">Comissão IDP</th>
             <th className="px-5 py-3 font-medium">Especialista</th>
             <th className="px-5 py-3 font-medium">Status</th>
+            <th className="px-5 py-3 font-medium">Status Comissão</th>
             <th className="px-5 py-3 font-medium">Recebimento</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-selo-700/10">
           {linhas.map(({ registro, lead }) => {
             const statusOption = resolveStatusFinanceiro(registro.status_financeiro);
+            const statusComissaoOption = resolveStatusComissao(registro.status_comissao);
             return (
               <tr
                 key={registro.id}
@@ -69,6 +72,13 @@ export function FinanceiroTable({ leads, registros, onOpenLead }: FinanceiroTabl
                     className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusOption.badgeClass}`}
                   >
                     {statusOption.emoji} {statusOption.label}
+                  </span>
+                </td>
+                <td className="px-5 py-4">
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusComissaoOption.badgeClass}`}
+                  >
+                    {statusComissaoOption.emoji} {statusComissaoOption.label}
                   </span>
                 </td>
                 <td className="px-5 py-4 text-ink/70">

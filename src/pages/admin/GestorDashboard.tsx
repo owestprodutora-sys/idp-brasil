@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AlertasOperacionais } from "@/components/admin/AlertasOperacionais";
 import { Button } from "@/components/ui/button";
+import { ComissoesDashboard } from "@/components/admin/ComissoesDashboard";
 import { FinanceiroCards } from "@/components/admin/FinanceiroCards";
 import { FinanceiroTable } from "@/components/admin/FinanceiroTable";
 import { GestorLeadsTable } from "@/components/admin/GestorLeadsTable";
@@ -171,6 +172,7 @@ export function GestorDashboard() {
                 <>
                   <FinanceiroCards registros={financeiro.registros} />
                   <IndicadoresFinanceiros registros={financeiro.registros} />
+                  <ComissoesDashboard registros={financeiro.registros} />
                   <FinanceiroTable
                     leads={leads}
                     registros={financeiro.registros}

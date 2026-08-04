@@ -12,8 +12,11 @@ import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
 import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilters";
 import { LeadsTable } from "@/components/admin/LeadsTable";
 import { MeuDiaPanel, type MeuDiaCardKey } from "@/components/admin/MeuDiaPanel";
+import { SpecialistFinanceiroCards } from "@/components/admin/SpecialistFinanceiroCards";
+import { SpecialistIndicadoresComissao } from "@/components/admin/SpecialistIndicadoresComissao";
 import { StatusTabs } from "@/components/admin/StatusTabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { useLeads } from "@/hooks/useLeads";
 import { useMeuDiaData } from "@/hooks/useMeuDiaData";
 import { CLOSED_STATUSES, isProximaAcaoVencida, isSemContatoRecente, type LeadStatus } from "@/lib/crm-config";
@@ -36,6 +39,9 @@ export function SpecialistDashboard() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { leads, isLoading, errorMessage, updateLead } = useLeads();
+  // FASE 5A.1 — Painel Financeiro da Especialista (FEATURE 022/028).
+  // Mesmo hook já usado no Dashboard do Gestor (useFinanceiro.ts).
+  const financeiro = useFinanceiro();
   // FASE 4B — Dashboard Operacional "Meu Dia". Dados adicionais (documentos
   // de todos os leads + eventos de finalização de hoje) que o useLeads não
   // traz — ver hooks/useMeuDiaData.ts.
@@ -215,6 +221,23 @@ export function SpecialistDashboard() {
                     documentos={meuDia.documentos}
                     followUpsVencidos={meuDiaResumo.followUpsVencidos}
                   />
+
+                  {/* FASE 5A.1 — Painel Financeiro da Especialista (FEATURE
+                      022/028). Bloco independente, com seu próprio
+                      carregamento (useFinanceiro) — não interfere no fluxo
+                      de leads acima. */}
+                  {financeiro.errorMessage && (
+                    <p className="text-sm text-red-600">{financeiro.errorMessage}</p>
+                  )}
+                  {!financeiro.isLoading && !financeiro.errorMessage && (
+                    <div className="space-y-3">
+                      <h2 className="font-display text-base font-semibold text-selo-900">
+                        Financeiro
+                      </h2>
+                      <SpecialistFinanceiroCards registros={financeiro.registros} />
+                      <SpecialistIndicadoresComissao registros={financeiro.registros} />
+                    </div>
+                  )}
 
                   <AgendaPlaceholder />
                 </>

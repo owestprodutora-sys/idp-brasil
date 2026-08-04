@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageCircle, X } from "lucide-react";
 
 import { LeadAlertas } from "@/components/admin/LeadAlertas";
+import { LeadComissaoPanel } from "@/components/admin/LeadComissaoPanel";
 import { LeadFinanceiroPanel } from "@/components/admin/LeadFinanceiroPanel";
 import { LeadTimeline } from "@/components/admin/LeadTimeline";
 import { ProximaAcaoCard } from "@/components/admin/ProximaAcaoCard";
@@ -33,6 +34,7 @@ import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { useAuth } from "@/hooks/useAuth";
 import type { Documento, DocumentoHistorico } from "@/types/documento";
 import type { Lead } from "@/types/lead";
+import type { LeadFinanceiro } from "@/types/lead-financeiro";
 
 interface LeadDetailModalProps {
   lead: Lead;
@@ -53,6 +55,10 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
   );
   const [motivoEncerramento, setMotivoEncerramento] = useState(lead.motivo_encerramento ?? "");
   const [motivoFinalizacao, setMotivoFinalizacao] = useState(lead.motivo_finalizacao ?? "");
+  // FASE 5A.1 — repassado pra LeadComissaoPanel quando LeadFinanceiroPanel
+  // salva, pra refletir um valor_comissao_idp recém-calculado sem esperar
+  // o modal reabrir (ver LeadComissaoPanel#registroSincronizado).
+  const [financeiroRegistro, setFinanceiroRegistro] = useState<LeadFinanceiro | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedJustNow, setSavedJustNow] = useState(false);
@@ -662,7 +668,15 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
           <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/45">
             Financeiro
           </h3>
-          <LeadFinanceiroPanel leadId={lead.id} />
+          <LeadFinanceiroPanel leadId={lead.id} onSaved={setFinanceiroRegistro} />
+
+          {/* FASE 5A.1 (FEATURE 023/024/025) — Centro de Comissões. */}
+          <LeadComissaoPanel
+            leadId={lead.id}
+            role={profile?.role}
+            usuario={{ id: session?.user.id ?? null, nome: profile?.nome ?? session?.user.email ?? "Equipe" }}
+            registroSincronizado={financeiroRegistro}
+          />
         </div>
 
         <div className="mt-6 space-y-3 border-t border-selo-700/10 pt-6">

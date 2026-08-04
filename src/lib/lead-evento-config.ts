@@ -12,7 +12,13 @@ export type LeadEventoTipo =
   | "PRIORIDADE_ALTERADA"
   | "SERVICO_ALTERADO"
   | "OBSERVACAO_ADICIONADA"
-  | "CASO_FINALIZADO";
+  | "CASO_FINALIZADO"
+  // FASE 5A.1 — Centro de Comissões (FEATURE 027). Reutiliza lead_eventos;
+  // nenhuma tabela de histórico nova.
+  | "COMISSAO_PAGAMENTO_INFORMADO"
+  | "COMISSAO_CONFIRMADA"
+  | "COMISSAO_REVERTIDA"
+  | "COMISSAO_ISENTA";
 
 export interface LeadEventoTipoOption {
   value: LeadEventoTipo;
@@ -27,6 +33,14 @@ export const LEAD_EVENTO_TIPO_OPTIONS: LeadEventoTipoOption[] = [
   { value: "SERVICO_ALTERADO", icone: "🧾", label: "Serviço alterado" },
   { value: "OBSERVACAO_ADICIONADA", icone: "📝", label: "Observação adicionada" },
   { value: "CASO_FINALIZADO", icone: "⚫", label: "Caso finalizado" },
+  {
+    value: "COMISSAO_PAGAMENTO_INFORMADO",
+    icone: "💸",
+    label: "Pagamento da comissão informado",
+  },
+  { value: "COMISSAO_CONFIRMADA", icone: "✅", label: "Pagamento da comissão confirmado" },
+  { value: "COMISSAO_REVERTIDA", icone: "↩️", label: "Comissão revertida para pendente" },
+  { value: "COMISSAO_ISENTA", icone: "🟣", label: "Comissão marcada como isenta" },
 ];
 
 const LEAD_EVENTO_TIPO_MAP = new Map(LEAD_EVENTO_TIPO_OPTIONS.map((o) => [o.value, o]));
