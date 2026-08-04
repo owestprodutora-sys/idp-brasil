@@ -1,7 +1,7 @@
 // MVP 1.1 — Fase 3. Fonte única de verdade pro status de documento e pro
 // checklist automático por serviço (mesmo padrão já usado em crm-config.ts).
 
-import type { DocumentoStatus } from "@/types/documento";
+import type { DocumentoHistorico, DocumentoStatus } from "@/types/documento";
 
 export interface DocumentoStatusOption {
   value: DocumentoStatus;
@@ -102,3 +102,26 @@ export function checklistDoServico(servico: string | null | undefined): Checklis
   if (!servico) return [];
   return DOCUMENTO_CHECKLIST_POR_SERVICO[servico] ?? [];
 }
+
+// FASE 4A — movido de LeadDetailModal.tsx pra virar fonte única de verdade:
+// usado tanto pelo histórico por documento (dentro do modal) quanto pela
+// Timeline Unificada (FEATURE 010, src/lib/lead-timeline.ts).
+export const ACAO_HISTORICO_LABEL: Record<DocumentoHistorico["acao"], string> = {
+  CHECKLIST_GERADO: "Item do checklist gerado",
+  DOCUMENTO_ENVIADO: "Documento enviado",
+  DOCUMENTO_SUBSTITUIDO: "Documento substituído",
+  DOCUMENTO_VALIDADO: "Marcado como correto",
+  DOCUMENTO_REJEITADO: "Marcado como inválido",
+  NOVA_VERSAO_SOLICITADA: "Nova versão solicitada",
+};
+
+// Ícone por ação — só usado pela Timeline (o histórico dentro do modal já
+// tem contexto visual suficiente sem ícone, ver LeadDetailModal.tsx).
+export const ACAO_HISTORICO_ICONE: Record<DocumentoHistorico["acao"], string> = {
+  CHECKLIST_GERADO: "📋",
+  DOCUMENTO_ENVIADO: "📤",
+  DOCUMENTO_SUBSTITUIDO: "🔁",
+  DOCUMENTO_VALIDADO: "✅",
+  DOCUMENTO_REJEITADO: "❌",
+  NOVA_VERSAO_SOLICITADA: "🔄",
+};

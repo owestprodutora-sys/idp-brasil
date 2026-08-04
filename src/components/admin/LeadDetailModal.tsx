@@ -1,6 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageCircle, X } from "lucide-react";
 
+import { LeadAlertas } from "@/components/admin/LeadAlertas";
+import { LeadTimeline } from "@/components/admin/LeadTimeline";
+import { ProximaAcaoCard } from "@/components/admin/ProximaAcaoCard";
 import { Button } from "@/components/ui/button";
 import { documentLabel, yesNoLabel } from "@/lib/answer-labels";
 import {
@@ -10,11 +13,20 @@ import {
   PROXIMA_ACAO_SUGESTOES,
   SERVICO_OPTIONS,
   STATUS_OPTIONS,
+  motivoFinalizacaoLabel,
   origemLabel,
+  resolvePriority,
+  resolveStatus,
+  servicoLabel,
 } from "@/lib/crm-config";
-import { resolveDocumentoStatus } from "@/lib/documento-config";
+import { ACAO_HISTORICO_LABEL, resolveDocumentoStatus } from "@/lib/documento-config";
 import { sincronizarChecklistDocumentos } from "@/lib/documento-checklist";
 import { formatDateTime, toDateInputValue } from "@/lib/format";
+import { mensagemSugerida } from "@/lib/followup-messages";
+import type { LeadEventoTipo } from "@/lib/lead-evento-config";
+import { registrarLeadEvento } from "@/lib/lead-eventos";
+import { buildLeadTimeline, type TimelineItem } from "@/lib/lead-timeline";
+import { determinarProximaAcao, type ProximaAcaoBotao } from "@/lib/proxima-acao";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,6 +89,54 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
       isActive = false;
     };
   }, [lead.id]);
+
+  // FASE 4A (FEATURE 010) — Timeline Unificada. Recarrega sempre que o
+  // checklist muda (upload, validação, troca de serviço) — e também é
+  // chamada manualmente depois de handleSave, já que uma alteração de
+  // status/prioridade/observações não muda `documentos`.
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
+
+  async function carregarTimeline(documentosAtuais: Documento[]) {
+    setIsLoadingTimeline(true);
+    try {
+      const items = await buildLeadTimeline(lead, documentosAtuais);
+      setTimelineItems(items);
+    } catch (timelineError) {
+      console.error("[Timeline] Erro ao carregar timeline:", timelineError);
+    } finally {
+      setIsLoadingTimeline(false);
+    }
+  }
+
+  useEffect(() => {
+    if (isLoadingDocumentos) return;
+    carregarTimeline(documentos);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id, documentos, isLoadingDocumentos]);
+
+  // FASE 4A (FEATURE 011) — botão de ação do card de Próxima Ação.
+  const statusSelectRef = useRef<HTMLSelectElement>(null);
+  const observacoesRef = useRef<HTMLTextAreaElement>(null);
+  const [copyFeedback, setCopyFeedback] = useState(false);
+
+  async function handleProximaAcaoAction(botao: ProximaAcaoBotao) {
+    if (botao.tipo === "copiar_mensagem") {
+      try {
+        await navigator.clipboard.writeText(mensagemSugerida(lead));
+        setCopyFeedback(true);
+        setTimeout(() => setCopyFeedback(false), 2000);
+      } catch (clipboardError) {
+        console.error("[Clipboard] Erro ao copiar mensagem:", clipboardError);
+      }
+      return;
+    }
+    if (botao.tipo === "alterar_status") {
+      statusSelectRef.current?.focus();
+      return;
+    }
+    observacoesRef.current?.focus();
+  }
 
   // FEATURE 005 — upload manual. id do documento cujo input está com envio
   // em andamento (desabilita só aquele item, não o modal inteiro).
@@ -248,15 +308,6 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
 
   // FEATURE 008 (visual) — histórico por documento, carregado sob demanda
   // (evita 1 query por item da lista logo ao abrir o modal).
-  const ACAO_HISTORICO_LABEL: Record<DocumentoHistorico["acao"], string> = {
-    CHECKLIST_GERADO: "Item do checklist gerado",
-    DOCUMENTO_ENVIADO: "Documento enviado",
-    DOCUMENTO_SUBSTITUIDO: "Documento substituído",
-    DOCUMENTO_VALIDADO: "Marcado como correto",
-    DOCUMENTO_REJEITADO: "Marcado como inválido",
-    NOVA_VERSAO_SOLICITADA: "Nova versão solicitada",
-  };
-
   const [historicoAbertoId, setHistoricoAbertoId] = useState<string | null>(null);
   const [historicoPorDocumento, setHistoricoPorDocumento] = useState<
     Record<string, DocumentoHistorico[]>
@@ -365,12 +416,62 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
     onUpdated(data as Lead);
     setSavedJustNow(true);
 
+    // FASE 4A (FEATURE 009) — registra em lead_eventos só os campos que
+    // realmente mudaram (nunca gera evento duplicado quando o valor salvo
+    // é igual ao anterior).
+    const usuarioNome = profile?.nome ?? session?.user.email ?? "Equipe";
+    const usuarioAcao = { id: session?.user.id ?? null, nome: usuarioNome };
+    const eventosParaRegistrar: { tipo: LeadEventoTipo; descricao: string | null }[] = [];
+
+    if (status !== lead.status) {
+      eventosParaRegistrar.push({
+        tipo: "STATUS_ALTERADO",
+        descricao: `${resolveStatus(lead.status).label} → ${resolveStatus(status).label}`,
+      });
+      if (status === "FINALIZADO") {
+        eventosParaRegistrar.push({
+          tipo: "CASO_FINALIZADO",
+          descricao: motivoFinalizacaoLabel(updates.motivo_finalizacao),
+        });
+      }
+    }
+    if (prioridade !== (lead.prioridade ?? "normal")) {
+      eventosParaRegistrar.push({
+        tipo: "PRIORIDADE_ALTERADA",
+        descricao: `${resolvePriority(lead.prioridade).label} → ${resolvePriority(prioridade).label}`,
+      });
+    }
+    if (novoServico !== servicoAnterior) {
+      eventosParaRegistrar.push({
+        tipo: "SERVICO_ALTERADO",
+        descricao: `${servicoLabel(servicoAnterior)} → ${servicoLabel(novoServico)}`,
+      });
+    }
+    if (updates.observacoes !== (lead.observacoes ?? null)) {
+      eventosParaRegistrar.push({ tipo: "OBSERVACAO_ADICIONADA", descricao: updates.observacoes });
+    }
+
+    if (eventosParaRegistrar.length > 0) {
+      await Promise.all(
+        eventosParaRegistrar.map((evento) =>
+          registrarLeadEvento(lead.id, evento.tipo, evento.descricao, usuarioAcao),
+        ),
+      );
+    }
+
     // FEATURE 004 — o checklist documental é gerado/atualizado sempre que
     // o serviço do lead é definido ou trocado. Só dispara quando o valor
     // realmente mudou (a própria função também tem esse early return, mas
     // evitamos a chamada de rede à toa).
     if (novoServico !== servicoAnterior) {
       await sincronizarESetarChecklist(novoServico, servicoAnterior);
+    }
+
+    // A troca de serviço já recarrega a timeline (via mudança em
+    // `documentos`, no useEffect acima); nos demais casos, recarregamos
+    // aqui pra refletir os eventos recém-registrados.
+    if (eventosParaRegistrar.length > 0 && novoServico === servicoAnterior) {
+      await carregarTimeline(documentos);
     }
   }
 
@@ -408,6 +509,21 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
           <Info label="Documentação médica" value={documentLabel(lead.laudo)} />
         </div>
 
+        {/* FASE 4A — Inteligência Operacional (FEATURE 011, 012, 010).
+            Ordem fixa: Próxima ação → Alertas → Timeline, pra especialista
+            saber onde o caso está assim que abre o modal. */}
+        <div className="mt-6 space-y-5 border-t border-selo-700/10 pt-6">
+          <ProximaAcaoCard
+            proximaAcao={determinarProximaAcao(lead, documentos)}
+            onAction={handleProximaAcaoAction}
+          />
+          {copyFeedback && <p className="-mt-3 text-xs text-selo-700">Mensagem copiada.</p>}
+
+          <LeadAlertas lead={lead} documentos={documentos} />
+
+          <LeadTimeline items={timelineItems} isLoading={isLoadingTimeline} />
+        </div>
+
         <div className="mt-6 space-y-4 border-t border-selo-700/10 pt-6">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/45">
             Atendimento
@@ -416,6 +532,7 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
           <div className="grid grid-cols-2 gap-4">
             <Field label="Status">
               <select
+                ref={statusSelectRef}
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="h-10 w-full rounded-lg border border-selo-700/20 bg-white px-3 text-sm text-selo-900 focus:border-selo-700 focus:outline-none"
@@ -511,6 +628,7 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
 
           <Field label="Observações internas">
             <textarea
+              ref={observacoesRef}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               placeholder="Ex: cliente prefere contato após 18h."
