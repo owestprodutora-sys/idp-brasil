@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageCircle, X } from "lucide-react";
 
 import { LeadAlertas } from "@/components/admin/LeadAlertas";
+import { LeadFinanceiroPanel } from "@/components/admin/LeadFinanceiroPanel";
 import { LeadTimeline } from "@/components/admin/LeadTimeline";
 import { ProximaAcaoCard } from "@/components/admin/ProximaAcaoCard";
 import { Button } from "@/components/ui/button";
@@ -651,6 +652,17 @@ export function LeadDetailModal({ lead, onClose, onUpdated }: LeadDetailModalPro
               ))}
             </select>
           </Field>
+        </div>
+
+        {/* FASE 5A (FEATURE 018) — Centro Financeiro do Lead. Bloco
+            independente do CRM: tem seu próprio carregamento/salvamento
+            (lead_financeiro), sem interferir no handleSave do restante do
+            modal. */}
+        <div className="mt-6 space-y-3 border-t border-selo-700/10 pt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/45">
+            Financeiro
+          </h3>
+          <LeadFinanceiroPanel leadId={lead.id} />
         </div>
 
         <div className="mt-6 space-y-3 border-t border-selo-700/10 pt-6">

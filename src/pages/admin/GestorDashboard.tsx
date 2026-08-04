@@ -1,19 +1,23 @@
-import { ArrowLeft, ClipboardList } from "lucide-react";
+import { ArrowLeft, ClipboardList, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AlertasOperacionais } from "@/components/admin/AlertasOperacionais";
 import { Button } from "@/components/ui/button";
-import { FinanceiroPlaceholder } from "@/components/admin/FinanceiroPlaceholder";
+import { FinanceiroCards } from "@/components/admin/FinanceiroCards";
+import { FinanceiroTable } from "@/components/admin/FinanceiroTable";
 import { GestorLeadsTable } from "@/components/admin/GestorLeadsTable";
 import { GestorMetricsCards } from "@/components/admin/GestorMetricsCards";
+import { IndicadoresFinanceiros } from "@/components/admin/IndicadoresFinanceiros";
+import { LeadDetailModal } from "@/components/admin/LeadDetailModal";
 import { LeadFilters, type LeadFiltersValue } from "@/components/admin/LeadFilters";
 import { StatusTabs } from "@/components/admin/StatusTabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { useLeads } from "@/hooks/useLeads";
-import { isLeadConvertido } from "@/lib/crm-config";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import type { Lead } from "@/types/lead";
 
 const DEFAULT_FILTERS: LeadFiltersValue = {
   status: "todos",
@@ -28,19 +32,24 @@ const DEFAULT_FILTERS: LeadFiltersValue = {
 export function GestorDashboard() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const { leads, isLoading, errorMessage } = useLeads();
-  const [view, setView] = useState<"visao_geral" | "acompanhar_leads">("visao_geral");
+  const { leads, isLoading, errorMessage, updateLead } = useLeads();
+  // FASE 5A — Centro Financeiro Operacional (FEATURE 019/020/021).
+  const financeiro = useFinanceiro();
+  const [view, setView] = useState<"visao_geral" | "acompanhar_leads" | "financeiro">(
+    "visao_geral",
+  );
   const [filters, setFilters] = useState<LeadFiltersValue>(DEFAULT_FILTERS);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  function handleLeadUpdated(updated: Lead) {
+    updateLead(updated);
+    setSelectedLead(updated);
+  }
 
   async function handleSignOut() {
     await signOut();
     navigate("/login", { replace: true });
   }
-
-  // MVP 1.1 — "convertido" passou a ser FINALIZADO com desfecho de sucesso.
-  // Critério centralizado em lib/crm-config.ts#isLeadConvertido (FASE 4 —
-  // antes vivia duplicado aqui e em GestorMetricsCards).
-  const convertidos = leads.filter(isLeadConvertido).length;
 
   const leadsFiltrados = useMemo(() => {
     const now = Date.now();
@@ -88,15 +97,24 @@ export function GestorDashboard() {
 
               <AlertasOperacionais leads={leads} />
 
-              <Button
-                onClick={() => setView("acompanhar_leads")}
-                className="h-11 bg-selo-700 text-paper hover:bg-selo-600"
-              >
-                <ClipboardList className="mr-2 h-4 w-4" />
-                Acompanhar Leads
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => setView("acompanhar_leads")}
+                  className="h-11 bg-selo-700 text-paper hover:bg-selo-600"
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Acompanhar Leads
+                </Button>
 
-              <FinanceiroPlaceholder clientesConvertidos={convertidos} />
+                <Button
+                  onClick={() => setView("financeiro")}
+                  variant="outline"
+                  className="h-11 border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Ver Financeiro
+                </Button>
+              </div>
             </>
           )}
 
@@ -131,8 +149,47 @@ export function GestorDashboard() {
               )}
             </>
           )}
+
+          {isSupabaseConfigured && !isLoading && !errorMessage && view === "financeiro" && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setView("visao_geral")}
+                className="border-selo-700/30 text-selo-700 hover:bg-selo-700/5"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar à visão geral
+              </Button>
+
+              {financeiro.errorMessage && (
+                <p className="text-sm text-red-600">{financeiro.errorMessage}</p>
+              )}
+
+              {financeiro.isLoading ? (
+                <p className="text-sm text-ink/60">Carregando dados financeiros...</p>
+              ) : (
+                <>
+                  <FinanceiroCards registros={financeiro.registros} />
+                  <IndicadoresFinanceiros registros={financeiro.registros} />
+                  <FinanceiroTable
+                    leads={leads}
+                    registros={financeiro.registros}
+                    onOpenLead={setSelectedLead}
+                  />
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
+
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onUpdated={handleLeadUpdated}
+        />
+      )}
     </div>
   );
 }
